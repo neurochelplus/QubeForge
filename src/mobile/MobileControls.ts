@@ -1,5 +1,5 @@
-import * as THREE from 'three';
-import { Game } from '../core/Game';
+import * as THREE from "three";
+import { Game } from "../core/Game";
 
 export class MobileControls {
   private game: Game;
@@ -76,10 +76,10 @@ export class MobileControls {
       this.joystickStick.style.transform = `translate(calc(-50% + ${stickX}px), calc(-50% + ${stickY}px))`;
 
       const threshold = 10;
-      this.game.playerPhysics.moveForward = dy < -threshold;
-      this.game.playerPhysics.moveBackward = dy > threshold;
-      this.game.playerPhysics.moveLeft = dx < -threshold;
-      this.game.playerPhysics.moveRight = dx > threshold;
+      this.game.player.physics.moveForward = dy < -threshold;
+      this.game.player.physics.moveBackward = dy > threshold;
+      this.game.player.physics.moveLeft = dx < -threshold;
+      this.game.player.physics.moveRight = dx > threshold;
     });
 
     const resetStick = (e: TouchEvent) => {
@@ -97,10 +97,10 @@ export class MobileControls {
         this.isDraggingStick = false;
         this.joystickTouchId = null;
         this.joystickStick.style.transform = `translate(-50%, -50%)`;
-        this.game.playerPhysics.moveForward = false;
-        this.game.playerPhysics.moveBackward = false;
-        this.game.playerPhysics.moveLeft = false;
-        this.game.playerPhysics.moveRight = false;
+        this.game.player.physics.moveForward = false;
+        this.game.player.physics.moveBackward = false;
+        this.game.player.physics.moveLeft = false;
+        this.game.player.physics.moveRight = false;
       }
     };
 
@@ -111,7 +111,7 @@ export class MobileControls {
   private initButtons() {
     document.getElementById("btn-jump")!.addEventListener("touchstart", (e) => {
       e.preventDefault();
-      this.game.playerPhysics.jump();
+      this.game.player.physics.jump();
     });
 
     const btnAttack = document.getElementById("btn-attack")!;
@@ -126,8 +126,8 @@ export class MobileControls {
       this.lastAttackY = touch.clientY;
 
       this.game.isAttackPressed = true;
-      this.game.playerHand.punch();
-      this.game.playerCombat.performAttack();
+      this.game.player.hand.punch();
+      this.game.player.combat.performAttack();
       this.game.blockBreaking.start(this.game.world);
     });
 
@@ -173,7 +173,7 @@ export class MobileControls {
 
       if (touchFound) {
         this.game.isAttackPressed = false;
-        this.game.playerHand.stopPunch();
+        this.game.player.hand.stopPunch();
         this.game.blockBreaking.stop();
         this.attackTouchId = null;
       }
@@ -182,13 +182,15 @@ export class MobileControls {
     btnAttack.addEventListener("touchend", endAttack);
     btnAttack.addEventListener("touchcancel", endAttack);
 
-    document.getElementById("btn-place")!.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      // Access blockInteraction via game property if needed,
-      // but main.ts was calling performInteract() wrapper.
-      // Game class has blockInteraction public.
-      this.game.blockInteraction.interact(this.game.world);
-    });
+    document
+      .getElementById("btn-place")!
+      .addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        // Access blockInteraction via game property if needed,
+        // but main.ts was calling performInteract() wrapper.
+        // Game class has blockInteraction public.
+        this.game.blockInteraction.interact(this.game.world);
+      });
 
     // Inventory button needs access to toggleInventory from main/Game.
     // Ideally Game should have toggleInventory method or similar.
@@ -204,14 +206,14 @@ export class MobileControls {
     document.getElementById("btn-inv")!.addEventListener("touchstart", (e) => {
       e.preventDefault();
       // Dispatch custom event to be handled by main/Game
-      window.dispatchEvent(new CustomEvent('toggle-inventory'));
+      window.dispatchEvent(new CustomEvent("toggle-inventory"));
     });
 
     // Menu Button
     document.getElementById("btn-menu")!.addEventListener("touchstart", (e) => {
       e.preventDefault();
       // Dispatch custom event
-      window.dispatchEvent(new CustomEvent('toggle-pause-menu'));
+      window.dispatchEvent(new CustomEvent("toggle-pause-menu"));
     });
   }
 
@@ -237,38 +239,42 @@ export class MobileControls {
       this.lastLookY = touch.clientY;
     });
 
-    document.addEventListener("touchmove", (e) => {
-      if (this.lookTouchId === null) return;
-      if (e.cancelable) e.preventDefault();
+    document.addEventListener(
+      "touchmove",
+      (e) => {
+        if (this.lookTouchId === null) return;
+        if (e.cancelable) e.preventDefault();
 
-      const target = e.target as HTMLElement;
-      // Skip check? logic was: if touch started elsewhere, we continue dragging.
-      // But we need to ensure we are tracking the CORRECT touch.
+        const target = e.target as HTMLElement;
+        // Skip check? logic was: if touch started elsewhere, we continue dragging.
+        // But we need to ensure we are tracking the CORRECT touch.
 
-      let touch: Touch | undefined;
-      for (let i = 0; i < e.changedTouches.length; i++) {
-        if (e.changedTouches[i].identifier === this.lookTouchId) {
-          touch = e.changedTouches[i];
-          break;
+        let touch: Touch | undefined;
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          if (e.changedTouches[i].identifier === this.lookTouchId) {
+            touch = e.changedTouches[i];
+            break;
+          }
         }
-      }
 
-      if (!touch) return;
+        if (!touch) return;
 
-      const dx = touch.clientX - this.lastLookX;
-      const dy = touch.clientY - this.lastLookY;
+        const dx = touch.clientX - this.lastLookX;
+        const dy = touch.clientY - this.lastLookY;
 
-      this.lastLookX = touch.clientX;
-      this.lastLookY = touch.clientY;
+        this.lastLookX = touch.clientX;
+        this.lastLookY = touch.clientY;
 
-      const SENSITIVITY = 0.005;
-      this.game.renderer.controls.object.rotation.y -= dx * SENSITIVITY;
-      this.game.renderer.camera.rotation.x -= dy * SENSITIVITY;
-      this.game.renderer.camera.rotation.x = Math.max(
-        -Math.PI / 2,
-        Math.min(Math.PI / 2, this.game.renderer.camera.rotation.x),
-      );
-    }, { passive: false });
+        const SENSITIVITY = 0.005;
+        this.game.renderer.controls.object.rotation.y -= dx * SENSITIVITY;
+        this.game.renderer.camera.rotation.x -= dy * SENSITIVITY;
+        this.game.renderer.camera.rotation.x = Math.max(
+          -Math.PI / 2,
+          Math.min(Math.PI / 2, this.game.renderer.camera.rotation.x),
+        );
+      },
+      { passive: false },
+    );
 
     const endLook = (e: TouchEvent) => {
       if (this.lookTouchId === null) return;

@@ -364,11 +364,34 @@ canvas {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    color: white;
-    font-size: 24px;
+    width: 20px;
+    height: 20px;
     pointer-events: none;
     z-index: 20;
-    text-shadow: 1px 1px 1px black;
+}
+
+#crosshair::before,
+#crosshair::after {
+    content: "";
+    position: absolute;
+    background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent white */
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.5); /* Outline for visibility on light blocks */
+}
+
+/* Horizontal line */
+#crosshair::before {
+    top: 9px; /* (20 - 2) / 2 */
+    left: 0;
+    width: 20px;
+    height: 2px;
+}
+
+/* Vertical line */
+#crosshair::after {
+    top: 0;
+    left: 9px; /* (20 - 2) / 2 */
+    width: 2px;
+    height: 20px;
 }
 
 /* Minecraft Menus */

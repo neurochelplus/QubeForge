@@ -204,6 +204,7 @@ const game = new Game(
 function toggleInventory(useCraftingTable = false) {
   if (game.inventoryUI) {
     const inventoryMenu = document.getElementById("inventory-menu")!;
+    const crosshair = document.getElementById("crosshair")!;
     const isInventoryOpen = inventoryMenu.style.display === "flex";
 
     dragDrop.setInventoryOpen(!isInventoryOpen);
@@ -211,6 +212,7 @@ function toggleInventory(useCraftingTable = false) {
     if (!isInventoryOpen) {
       controls.unlock();
       inventoryMenu.style.display = "flex";
+      crosshair.style.display = "none";
       craftingUI.setVisible(true, useCraftingTable);
 
       if (isMobile) {
@@ -264,6 +266,7 @@ function toggleInventory(useCraftingTable = false) {
 
       controls.lock();
       inventoryMenu.style.display = "none";
+      crosshair.style.display = "block";
 
       const dragged = dragDrop.getDraggedItem();
       if (dragged) {

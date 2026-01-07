@@ -11,6 +11,7 @@ export class Menus {
   private uiContainer: HTMLElement;
   private mobileUi: HTMLElement | null;
   private bgVideo: HTMLVideoElement;
+  private crosshair: HTMLElement;
 
   // Buttons
   private btnNewGame: HTMLElement;
@@ -35,6 +36,7 @@ export class Menus {
     this.uiContainer = document.getElementById("ui-container")!;
     this.mobileUi = document.getElementById("mobile-ui");
     this.bgVideo = document.getElementById("bg-video") as HTMLVideoElement;
+    this.crosshair = document.getElementById("crosshair")!;
 
     this.btnNewGame = document.getElementById("btn-new-game")!;
     this.btnContinue = document.getElementById(
@@ -119,6 +121,7 @@ export class Menus {
     this.inventoryMenu.style.display = "none";
     this.uiContainer.style.display = "none";
     this.bgVideo.style.display = "block"; // Show video
+    this.crosshair.style.display = "none";
 
     if (this.mobileUi) this.mobileUi.style.display = "none";
 
@@ -131,6 +134,7 @@ export class Menus {
     this.mainMenu.style.display = "none";
     this.settingsMenu.style.display = "none";
     this.game.renderer.controls.unlock();
+    this.crosshair.style.display = "none";
 
     // PC-specific Cooldown to match browser Pointer Lock security delay (~1.3s)
     if (!this.game.renderer.getIsMobile()) {
@@ -154,6 +158,7 @@ export class Menus {
     this.game.gameState.setPaused(false);
     this.pauseMenu.style.display = "none";
     this.settingsMenu.style.display = "none";
+    this.crosshair.style.display = "block";
 
     this.game.resetTime();
   }
@@ -247,6 +252,7 @@ export class Menus {
       this.settingsMenu.style.display = "none";
       this.uiContainer.style.display = "flex";
       this.bgVideo.style.display = "none"; // Hide video
+      this.crosshair.style.display = "block";
 
       if (this.mobileUi && this.game.renderer.getIsMobile()) {
         this.mobileUi.style.display = "block";

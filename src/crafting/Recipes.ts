@@ -39,6 +39,11 @@ export const RECIPES: Recipe[] = [
     keys: { P: BLOCK.PLANKS, S: BLOCK.STICK },
   },
   {
+    result: { id: BLOCK.WOODEN_AXE, count: 1 },
+    pattern: ["PP", "SP", "S "],
+    keys: { P: BLOCK.PLANKS, S: BLOCK.STICK },
+  },
+  {
     result: { id: BLOCK.WOODEN_SWORD, count: 1 },
     pattern: ["P", "P", "S"],
     keys: { P: BLOCK.PLANKS, S: BLOCK.STICK },
@@ -57,6 +62,11 @@ export const RECIPES: Recipe[] = [
   {
     result: { id: BLOCK.STONE_AXE, count: 1 },
     pattern: ["CC", "CS", " S"],
+    keys: { C: BLOCK.STONE, S: BLOCK.STICK },
+  },
+  {
+    result: { id: BLOCK.STONE_AXE, count: 1 },
+    pattern: ["CC", "SC", "S "],
     keys: { C: BLOCK.STONE, S: BLOCK.STICK },
   },
   {

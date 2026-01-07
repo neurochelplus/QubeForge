@@ -18,6 +18,10 @@ export class ChunkErrorMob extends Mob {
   // Glitch Effect
   private glitchTimer = 0;
 
+  // AI State
+  private preferredSide = 1; // 1 (Right) or -1 (Left)
+  private sideTimer = 0;
+
   constructor(
     world: World,
     scene: THREE.Scene,
@@ -198,6 +202,21 @@ export class ChunkErrorMob extends Mob {
     // Only apply effect if there is a specific attacker (Player)
     if (attackerPos) {
       this.wasHitRecently = true;
+
+      // Teleport randomly in radius 10
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 3 + Math.random() * 7; // 3 to 10 blocks
+      const tx = attackerPos.x + Math.sin(angle) * dist;
+      const tz = attackerPos.z + Math.cos(angle) * dist;
+
+      const worldX = Math.floor(tx);
+      const worldZ = Math.floor(tz);
+      const ty = this.world.getTopY(worldX, worldZ);
+
+      if (ty > 0) {
+          this.mesh.position.set(tx, ty + 1, tz);
+          this.velocity.set(0, 0, 0);
+      }
     }
   }
 
@@ -234,11 +253,10 @@ export class ChunkErrorMob extends Mob {
 
     // Additional logic if we have player instance
     if (playerInstance) {
-        // Rotation Lock: Always look same direction as player
-        // Player rotation is in controls.object.rotation.y (Camera rotation)
-        // But PointerLockControls object rotation is the camera rotation.
+        // Rotation Lock: Only Head rotates to match player
         const playerRotY = playerInstance.physics.controls.object.rotation.y;
-        this.mesh.rotation.y = playerRotY;
+        this.head.rotation.y = playerRotY;
+        // Body stays fixed (or random), we don't rotate this.mesh.rotation.y here
     }
 
     // --- Glitch Effect on Eyes/Mouth ---
@@ -290,42 +308,68 @@ export class ChunkErrorMob extends Mob {
   ) {
     if (!playerPos) return;
 
-    // Movement: "Short jerks, like 999ms ping"
-    // Teleport towards player every X seconds
+    // Update Side Timer
+    this.sideTimer += delta;
+    if (this.sideTimer > 8.0) {
+        this.preferredSide *= -1; // Switch side
+        this.sideTimer = 0;
+    }
+
+    // Movement: "Short jerks"
     this.moveTimer += delta;
     if (this.moveTimer >= this.moveInterval) {
         this.moveTimer = 0;
-
-        // Randomize interval slightly
         this.moveInterval = 0.5 + Math.random() * 1.5;
 
-        // Vector to player
-        const dx = playerPos.x - this.mesh.position.x;
-        const dz = playerPos.z - this.mesh.position.z;
-        const dist = Math.sqrt(dx*dx + dz*dz);
+        // Calculate Target Position: Periphery of Player
+        // We need player's rotation. We don't have it passed directly as a value,
+        // but we can infer approximate direction from previous interactions or assume
+        // we can't perfectly know rotation just from 'playerPos' (Vector3).
+        // However, in update() we access 'playerInstance.physics.controls.object.rotation.y'.
+        // We can store that rotation in the class during update().
 
-        if (dist > 3 && dist < 40) {
-             // Teleport 1-2 blocks closer
-             const angle = Math.atan2(dx, dz);
-             const jumpDist = 1.0 + Math.random() * 1.0;
+        // Use stored rotation or fallback to "towards player" if unknown
+        const playerRotY = this.head.rotation.y; // We set this in update()
 
-             const targetX = this.mesh.position.x + Math.sin(angle) * jumpDist;
-             const targetZ = this.mesh.position.z + Math.cos(angle) * jumpDist;
+        // Periphery Angle: Player Rotation + Offset
+        // Player looks down -Z at rotY=0?
+        // Let's assume standard Three.js controls logic
+        // Angle to Periphery: +/- 45 degrees (PI/4)
+        const targetAngle = playerRotY + (this.preferredSide * Math.PI / 4);
 
-             // Find valid ground at target
+        // Distance: Keep about 15 blocks away
+        const targetDist = 15;
+
+        // Calculate Ideal Position relative to Player
+        // Camera looks towards -Z rotated by Y.
+        // Direction Vector: (-sin(rot), 0, -cos(rot)) usually for Forward
+        const dirX = -Math.sin(targetAngle);
+        const dirZ = -Math.cos(targetAngle);
+
+        const idealX = playerPos.x + dirX * targetDist;
+        const idealZ = playerPos.z + dirZ * targetDist;
+
+        // Move towards ideal position
+        const dx = idealX - this.mesh.position.x;
+        const dz = idealZ - this.mesh.position.z;
+        const distToIdeal = Math.sqrt(dx*dx + dz*dz);
+        const jumpDist = 1.0 + Math.random() * 1.5;
+
+        // Only move if we are far from ideal spot
+        if (distToIdeal > 2.0) {
+             const moveAngle = Math.atan2(dx, dz);
+
+             const targetX = this.mesh.position.x + Math.sin(moveAngle) * jumpDist;
+             const targetZ = this.mesh.position.z + Math.cos(moveAngle) * jumpDist;
+
              const worldX = Math.floor(targetX);
              const worldZ = Math.floor(targetZ);
-
-             // getTopY returns the highest solid block Y
              const targetY = this.world.getTopY(worldX, worldZ);
 
-             // Basic validity check: Don't teleport into void or way too high (cliffs)
-             // Allow some vertical movement (e.g. up/down hills)
              if (targetY > 0 && Math.abs(targetY - this.mesh.position.y) < 5) {
                  this.mesh.position.set(targetX, targetY + 1, targetZ);
-                 this.velocity.set(0, 0, 0); // Reset velocity to prevent residual movement
+                 this.velocity.set(0, 0, 0);
              } else {
-                 // Fallback: Just hop in place or small jump if path blocked
                  this.velocity.y = 2.0;
              }
         }

@@ -85,7 +85,8 @@ export class BlockInteraction {
                 // Safe Teleport for Player: Center of block + slightly up
                 const targetX = Math.floor(closestMob.mesh.position.x) + 0.5;
                 const targetZ = Math.floor(closestMob.mesh.position.z) + 0.5;
-                const targetY = closestMob.mesh.position.y + 0.5; // Lift up half block
+                // Move slightly above the block the mob is standing on (or in)
+                const targetY = Math.floor(closestMob.mesh.position.y) + 0.2;
 
                 playerPos.set(targetX, targetY, targetZ);
 

@@ -303,8 +303,8 @@ export class PlayerHand {
           // Position slightly in front of the tool face
           // Tool pattern is centered. Tool mesh local Z+ is "Front".
           // Depth is 0.04 (pixelSize). Half depth is 0.02.
-          // Place needle at z = 0.03
-          this.needleMesh.position.set(0, 0, 0.03);
+          // Place needle at z = 0.1 to be visible outside
+          this.needleMesh.position.set(0, 0, 0.1);
           this.currentMesh.add(this.needleMesh);
       }
     } else {

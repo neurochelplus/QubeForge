@@ -91,8 +91,8 @@ export class MobManager {
         this.attemptSpawnZombie(playerPos);
       }
 
-      // Attempt to spawn ChunkError (Independent of day/night, follows own rules)
-      if (!this.chunkErrorActive && this.chunkErrorCooldown <= 0) {
+      // Attempt to spawn ChunkError (Only at night, 90-150s cooldown)
+      if (!isDay && !this.chunkErrorActive && this.chunkErrorCooldown <= 0) {
         // Try to spawn ChunkError in camera view
         this.attemptSpawnChunkError(player, playerPos);
       }

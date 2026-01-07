@@ -259,20 +259,29 @@ export class ChunkErrorMob extends Mob {
         const dist = Math.sqrt(dx*dx + dz*dz);
 
         if (dist > 3 && dist < 40) {
-             // Teleport 1-2 blocks closer, but maybe strafing?
-             // "Strives to stay in peripheral vision".
-             // Simple approach: Move closer.
+             // Teleport 1-2 blocks closer
              const angle = Math.atan2(dx, dz);
              const jumpDist = 1.0 + Math.random() * 1.0;
 
-             // Move
-             this.mesh.position.x += Math.sin(angle) * jumpDist;
-             this.mesh.position.z += Math.cos(angle) * jumpDist;
+             const targetX = this.mesh.position.x + Math.sin(angle) * jumpDist;
+             const targetZ = this.mesh.position.z + Math.cos(angle) * jumpDist;
 
-             // Update Y (Snap to ground)
-             // Simple physics will handle falling, but for teleport we might end up in a wall.
-             // We rely on updatePhysics to push out of walls or handle gravity next frame.
-             this.velocity.y = 2.0; // Small hop
+             // Find valid ground at target
+             const worldX = Math.floor(targetX);
+             const worldZ = Math.floor(targetZ);
+
+             // getTopY returns the highest solid block Y
+             const targetY = this.world.getTopY(worldX, worldZ);
+
+             // Basic validity check: Don't teleport into void or way too high (cliffs)
+             // Allow some vertical movement (e.g. up/down hills)
+             if (targetY > 0 && Math.abs(targetY - this.mesh.position.y) < 5) {
+                 this.mesh.position.set(targetX, targetY + 1, targetZ);
+                 this.velocity.set(0, 0, 0); // Reset velocity to prevent residual movement
+             } else {
+                 // Fallback: Just hop in place or small jump if path blocked
+                 this.velocity.y = 2.0;
+             }
         }
     }
   }

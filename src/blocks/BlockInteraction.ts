@@ -79,7 +79,7 @@ export class BlockInteraction {
 
         // If valid height found (and not void)
         if (topY > 0) {
-             const targetY = topY + 1.0; // Stand on top of the block
+             const targetY = topY + 3.0; // Drop from above to prevent sticking
 
              // Check if target is not too high/low compared to current?
              // Not strictly required by prompt, but good practice.

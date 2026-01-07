@@ -105,10 +105,10 @@ const COMPASS_PATTERN = [
   "0000011111100000",
   "0001122222211000",
   "0011222222221100",
-  "0122222222222210",
-  "0122200222200210",
-  "1222000222200021",
-  "1222002222220021",
+  "0122222332222210",
+  "012220333300210",
+  "122200333300021",
+  "1222002332220021",
   "1222222222222221",
   "1222222222222221",
   "1222002222220021",
@@ -159,6 +159,8 @@ export function generateToolTexture(
         ctx.fillStyle = COLORS.HANDLE;
       } else if (pixel === "2") {
         ctx.fillStyle = materialColor;
+      } else if (pixel === "3") {
+        ctx.fillStyle = COLORS.RED;
       }
 
       ctx.fillRect(x * scale, y * scale, scale, scale);

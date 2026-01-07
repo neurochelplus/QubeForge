@@ -48,6 +48,7 @@ export class PlayerHand {
     if (id === BLOCK.WOODEN_SHOVEL) return TOOL_DEFS.WOODEN_SHOVEL;
     if (id === BLOCK.STONE_SHOVEL) return TOOL_DEFS.STONE_SHOVEL;
     if (id === BLOCK.STICK) return TOOL_DEFS.STICK;
+    if (id === BLOCK.BROKEN_COMPASS) return TOOL_DEFS.BROKEN_COMPASS;
     return null;
   }
 

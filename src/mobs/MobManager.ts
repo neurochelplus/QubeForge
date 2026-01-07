@@ -8,6 +8,7 @@ import { ItemEntity } from "../entities/ItemEntity";
 
 import { Environment } from "../world/Environment";
 import { Player } from "../player/Player";
+import { TOOL_TEXTURES } from "../constants/ToolTextures";
 
 export class MobManager {
   public mobs: Mob[] = [];
@@ -50,18 +51,20 @@ export class MobManager {
       const mob = this.mobs[i];
 
       if (mob.isDead) {
-        // Drop Item
-        this.entities.push(
-          new ItemEntity(
-            this.world,
-            this.scene,
-            mob.mesh.position.x,
-            mob.mesh.position.y,
-            mob.mesh.position.z,
-            6, // Loot ID
-            this.world.noiseTexture,
-          ),
-        );
+        // Drop Item (Only for non-ChunkError mobs, or general zombies)
+        if (!(mob instanceof ChunkErrorMob)) {
+            this.entities.push(
+              new ItemEntity(
+                this.world,
+                this.scene,
+                mob.mesh.position.x,
+                mob.mesh.position.y,
+                mob.mesh.position.z,
+                6, // Loot ID (Leaves placeholder)
+                this.world.noiseTexture,
+              ),
+            );
+        }
 
         this.despawnMob(i);
         continue;
@@ -192,7 +195,8 @@ export class MobManager {
                   mob.mesh.position.y,
                   mob.mesh.position.z,
                   30, // BROKEN_COMPASS
-                  this.world.noiseTexture
+                  this.world.noiseTexture,
+                  TOOL_TEXTURES[30] ? TOOL_TEXTURES[30].texture : null
                 )
              );
         }

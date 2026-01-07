@@ -1,11 +1,13 @@
 import * as THREE from "three";
 import { World } from "../world/World";
 import { Zombie } from "./Zombie";
+import { ChunkErrorMob } from "./ChunkErrorMob";
 import { Mob } from "./Mob";
 
 import { ItemEntity } from "../entities/ItemEntity";
 
 import { Environment } from "../world/Environment";
+import { Player } from "../player/Player";
 
 export class MobManager {
   public mobs: Mob[] = [];
@@ -17,6 +19,10 @@ export class MobManager {
   private spawnInterval = 10000; // 10 seconds
   private readonly MAX_MOBS = 10;
 
+  // Chunk Error Mob Singleton Logic
+  private chunkErrorActive = false;
+  private chunkErrorCooldown = 0; // Seconds until next spawn
+
   constructor(world: World, scene: THREE.Scene, entities: ItemEntity[]) {
     this.world = world;
     this.scene = scene;
@@ -25,12 +31,19 @@ export class MobManager {
 
   public update(
     delta: number,
-    playerPos: THREE.Vector3,
+    player: Player | THREE.Vector3,
     environment: Environment,
     onPlayerHit?: (damage: number) => void,
   ) {
     const now = performance.now();
     const isDay = environment.isDay;
+
+    let playerPos: THREE.Vector3;
+    if (player instanceof THREE.Vector3) {
+      playerPos = player;
+    } else {
+      playerPos = player.physics['controls'].object.position;
+    }
 
     // 1. Update existing mobs & check despawn
     for (let i = this.mobs.length - 1; i >= 0; i--) {
@@ -54,7 +67,7 @@ export class MobManager {
         continue;
       }
 
-      mob.update(delta, playerPos, onPlayerHit, isDay);
+      mob.update(delta, player, onPlayerHit, isDay);
 
       // Despawn if too far (> 80 blocks)
       const dist = mob.mesh.position.distanceTo(playerPos);
@@ -63,50 +76,82 @@ export class MobManager {
       }
     }
 
-    // 2. Spawn logic (Only at Night)
+    // Chunk Error Cooldown
+    if (this.chunkErrorCooldown > 0) {
+      this.chunkErrorCooldown -= delta;
+    }
+
+    // 2. Spawn logic
     if (
-      !isDay &&
       this.mobs.length < this.MAX_MOBS &&
       now - this.lastSpawnTime > this.spawnInterval
     ) {
-      this.attemptSpawn(playerPos);
+      // Attempt to spawn regular mobs at night
+      if (!isDay) {
+        this.attemptSpawnZombie(playerPos);
+      }
+
+      // Attempt to spawn ChunkError (Independent of day/night, follows own rules)
+      if (!this.chunkErrorActive && this.chunkErrorCooldown <= 0) {
+        // Try to spawn ChunkError in camera view
+        this.attemptSpawnChunkError(player, playerPos);
+      }
+
       this.lastSpawnTime = now + Math.random() * 5000;
     }
   }
 
-  private attemptSpawn(playerPos: THREE.Vector3) {
-    // Try 10 times to find a valid spot
-    for (let i = 0; i < 10; i++) {
-      // Random angle
-      const angle = Math.random() * Math.PI * 2;
-      // Random distance 20-40
-      const dist = 20 + Math.random() * 20;
+  private attemptSpawnZombie(playerPos: THREE.Vector3) {
+      // Try 10 times
+      for (let i = 0; i < 10; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const dist = 20 + Math.random() * 20;
+          const x = Math.floor(playerPos.x + Math.sin(angle) * dist);
+          const z = Math.floor(playerPos.z + Math.cos(angle) * dist);
+          const y = this.findSurfaceY(x, z);
 
-      const x = Math.floor(playerPos.x + Math.sin(angle) * dist);
-      const z = Math.floor(playerPos.z + Math.cos(angle) * dist);
-
-      // Check height
-      // Since World.getHeight logic might be complex or chunk-based,
-      // we can just scan downwards from a reasonable height (e.g. 255 or playerHeight + 20)
-      // Or if World has a direct helper, use that.
-      // Assuming we need to implement a simple scanner here if world.getHeight doesn't exist yet.
-
-      const y = this.findSurfaceY(x, z);
-
-      if (y !== -1) {
-        // Found valid ground
-        const zombie = new Zombie(
-          this.world,
-          this.scene,
-          x + 0.5,
-          y + 1,
-          z + 0.5,
-        );
-        this.mobs.push(zombie);
-        // console.log(`Spawned Zombie at ${x}, ${y+1}, ${z}`);
-        break; // Spawned one, stop trying
+          if (y !== -1) {
+              const mob = new Zombie(this.world, this.scene, x + 0.5, y + 1, z + 0.5);
+              this.mobs.push(mob);
+              break;
+          }
       }
-    }
+  }
+
+  private attemptSpawnChunkError(player: Player | THREE.Vector3, playerPos: THREE.Vector3) {
+      // Determine camera direction
+      let dir = new THREE.Vector3(0, 0, -1);
+      if (player instanceof Player) {
+          player.physics['controls'].getDirection(dir);
+      }
+      // If we don't have direction (Player param is just Vector3), pick random
+      if (!(player instanceof Player)) {
+          dir.set(Math.random()-0.5, 0, Math.random()-0.5).normalize();
+      }
+
+      // Try to find spot "in camera area" (in front)
+      // Cone of 60 degrees?
+      // Just pick a point in front 20-40 blocks away + random jitter
+      for (let i = 0; i < 5; i++) {
+          // Angle offset (-45 to +45 degrees)
+          const angleOffset = (Math.random() - 0.5) * (Math.PI / 2);
+
+          // Rotate dir by angleOffset around Y
+          const spawnDir = dir.clone().applyAxisAngle(new THREE.Vector3(0,1,0), angleOffset);
+          const dist = 15 + Math.random() * 25; // 15 to 40 blocks
+
+          const x = Math.floor(playerPos.x + spawnDir.x * dist);
+          const z = Math.floor(playerPos.z + spawnDir.z * dist);
+
+          const y = this.findSurfaceY(x, z);
+          if (y !== -1) {
+              const mob = new ChunkErrorMob(this.world, this.scene, x + 0.5, y + 1, z + 0.5);
+              this.mobs.push(mob);
+              this.chunkErrorActive = true;
+              // console.log("Spawned ChunkErrorMob");
+              break;
+          }
+      }
   }
 
   private findSurfaceY(x: number, z: number): number {
@@ -131,6 +176,13 @@ export class MobManager {
 
   private despawnMob(index: number) {
     const mob = this.mobs[index];
+
+    if (mob instanceof ChunkErrorMob) {
+        this.chunkErrorActive = false;
+        // Respawn timer: 1.5 - 2.5 minutes (90 - 150 seconds)
+        this.chunkErrorCooldown = 90 + Math.random() * 60;
+    }
+
     this.scene.remove(mob.mesh);
     mob.dispose();
     this.mobs.splice(index, 1);

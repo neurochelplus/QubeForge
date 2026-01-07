@@ -30,6 +30,10 @@ export class PlayerPhysics {
   private readonly speed = 50.0; // Acceleration force
   private readonly friction = 10.0; // Friction factor
 
+  // Invert Controls
+  private invertedControls = false;
+  private invertedTimer = 0;
+
   constructor(controls: PointerLockControls, world: World) {
     this.controls = controls;
     this.world = world;
@@ -42,6 +46,11 @@ export class PlayerPhysics {
 
   public setVelocity(velocity: THREE.Vector3): void {
     this.velocity.copy(velocity);
+  }
+
+  public setInvertedControls(duration: number) {
+    this.invertedControls = true;
+    this.invertedTimer = duration;
   }
 
   public jump(): void {
@@ -98,9 +107,21 @@ export class PlayerPhysics {
   public update(delta: number): void {
     const safeDelta = Math.min(delta, 0.05);
 
+    if (this.invertedControls) {
+      this.invertedTimer -= delta;
+      if (this.invertedTimer <= 0) {
+        this.invertedControls = false;
+      }
+    }
+
     // Input Vector (Local)
-    const inputX = Number(this.moveRight) - Number(this.moveLeft);
-    const inputZ = Number(this.moveForward) - Number(this.moveBackward);
+    let inputX = Number(this.moveRight) - Number(this.moveLeft);
+    let inputZ = Number(this.moveForward) - Number(this.moveBackward);
+
+    if (this.invertedControls) {
+      inputX = -inputX;
+      inputZ = -inputZ;
+    }
 
     // Get Camera Direction (World projected to flat plane)
     const forward = new THREE.Vector3();

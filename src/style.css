@@ -409,7 +409,7 @@ canvas {
     align-items: center;
 }
 
-/* Main Menu uses relative/absolute positioning for custom layout */
+/* Main Menu Layout */
 #main-menu {
     display: block;
 }
@@ -419,19 +419,42 @@ canvas {
     top: 10%;
     left: 50%;
     transform: translateX(-50%);
-    width: 80%;
-    max-width: 600px;
-    height: auto;
+    width: auto;
+    height: 15vh; /* 15% of screen height */
+    max-width: 90vw;
     filter: drop-shadow(0px 0px 10px rgba(0, 0, 0, 0.5));
 }
 
 #main-menu-buttons {
     position: absolute;
-    bottom: 10%;
-    right: 10%;
+    bottom: 5%;
+    right: 5%;
+    width: 30vw; /* Occupies roughly a quarter quadrant */
+    max-width: 400px; /* Cap size on huge screens */
+    min-width: 250px; /* Minimum legible size */
     display: flex;
     flex-direction: column;
-    align-items: flex-end; /* Align buttons to the right edge of container */
+    align-items: flex-end;
+}
+
+/* Pause and Settings Menu Containers */
+#pause-menu-container,
+#settings-menu-container {
+    width: 50vw; /* 50% of screen width */
+    max-width: 600px;
+    min-width: 300px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(
+        0,
+        0,
+        0,
+        0.4
+    ); /* Optional: slight background for readability */
+    padding: 20px;
+    border-radius: 8px;
+    backdrop-filter: blur(2px);
 }
 
 .setting-item {
@@ -455,25 +478,24 @@ canvas {
     background: #455a64;
     color: #fff;
     border: 4px solid #263238;
-    padding: 10px 20px;
+    padding: 2vh 1vw; /* Responsive padding */
     font-family: "Press Start 2P", cursive;
-    font-size: 16px; /* Adjusted for wider font */
+    font-size: clamp(12px, 1.5vw, 24px); /* Responsive font size */
     text-transform: uppercase;
     cursor: pointer;
     position: relative;
     transition: all 0.1s ease;
-    width: 300px;
+    width: 100%; /* Fill container */
     height: auto;
-    margin: 10px;
-    margin-bottom: 20px; /* Extra space for the shadow */
+    margin: 10px 0; /* Vertical margin only */
+    margin-bottom: 20px;
     box-sizing: border-box;
 
     /* 3D Volume Effect */
     box-shadow:
-        0 8px 0 #263238,
-        /* Bottom "3D" face */ 0 12px 20px rgba(0, 0, 0, 0.4); /* Drop shadow */
+        0 0.8vh 0 #263238,
+        /* Responsive 3D depth */ 0 1.2vh 2vh rgba(0, 0, 0, 0.4);
 
-    /* Remove default rounded corners from previous step */
     border-radius: 0;
 }
 
@@ -481,26 +503,26 @@ canvas {
 .menu-btn:hover {
     background: #546e7a;
     border-color: #ff6f00; /* Amber/Orange Glow */
-    transform: translateY(-2px);
+    transform: translateY(-0.2vh);
     box-shadow:
-        0 10px 0 #bf360c,
-        /* Darker Orange Shadow */ 0 15px 25px rgba(0, 0, 0, 0.5);
+        0 1vh 0 #bf360c,
+        /* Darker Orange Shadow */ 0 1.5vh 2.5vh rgba(0, 0, 0, 0.5);
     color: #fff;
 }
 
 /* Active: Pressed Down */
 .menu-btn:active {
-    transform: translateY(6px);
+    transform: translateY(0.6vh);
     box-shadow:
-        0 2px 0 #bf360c,
-        0 5px 10px rgba(0, 0, 0, 0.4);
+        0 0.2vh 0 #bf360c,
+        0 0.5vh 1vh rgba(0, 0, 0, 0.4);
 }
 
 .menu-btn:disabled {
     background: #37474f;
     border-color: #263238;
     color: #78909c;
-    box-shadow: 0 8px 0 #1c252a;
+    box-shadow: 0 0.8vh 0 #1c252a;
     cursor: not-allowed;
     transform: none;
 }

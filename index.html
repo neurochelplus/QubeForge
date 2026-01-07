@@ -62,24 +62,32 @@
 
         <!-- Pause Menu -->
         <div id="pause-menu" style="display: none">
-            <h2 style="font-size: 30px">Пауза</h2>
-            <button id="btn-resume" class="menu-btn">Продолжить</button>
-            <button id="btn-settings-pause" class="menu-btn">Настройки</button>
-            <button id="btn-exit" class="menu-btn">Сохранить и Выйти</button>
+            <div id="pause-menu-container">
+                <h2 style="font-size: 30px">Пауза</h2>
+                <button id="btn-resume" class="menu-btn">Продолжить</button>
+                <button id="btn-settings-pause" class="menu-btn">
+                    Настройки
+                </button>
+                <button id="btn-exit" class="menu-btn">
+                    Сохранить и Выйти
+                </button>
+            </div>
         </div>
 
         <!-- Settings Menu -->
         <div id="settings-menu" style="display: none">
-            <h2 style="font-size: 30px">Настройки</h2>
-            <div class="setting-item">
-                <label for="cb-shadows">Тени</label>
-                <input type="checkbox" id="cb-shadows" checked />
+            <div id="settings-menu-container">
+                <h2 style="font-size: 30px">Настройки</h2>
+                <div class="setting-item">
+                    <label for="cb-shadows">Тени</label>
+                    <input type="checkbox" id="cb-shadows" checked />
+                </div>
+                <div class="setting-item">
+                    <label for="cb-clouds">Облака</label>
+                    <input type="checkbox" id="cb-clouds" checked />
+                </div>
+                <button id="btn-back-settings" class="menu-btn">Назад</button>
             </div>
-            <div class="setting-item">
-                <label for="cb-clouds">Облака</label>
-                <input type="checkbox" id="cb-clouds" checked />
-            </div>
-            <button id="btn-back-settings" class="menu-btn">Назад</button>
         </div>
 
         <div id="blocker" style="display: none">

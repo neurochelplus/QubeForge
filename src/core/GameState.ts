@@ -3,6 +3,7 @@
 export class GameState {
   private isPaused: boolean = true;
   private isGameStarted: boolean = false;
+  private isResuming: boolean = false;
   private previousMenu: HTMLElement | null = null;
 
   public getPaused(): boolean {
@@ -21,6 +22,14 @@ export class GameState {
     this.isGameStarted = started;
   }
 
+  public getIsResuming(): boolean {
+    return this.isResuming;
+  }
+
+  public setIsResuming(resuming: boolean): void {
+    this.isResuming = resuming;
+  }
+
   public getPreviousMenu(): HTMLElement | null {
     return this.previousMenu;
   }
@@ -35,4 +44,3 @@ export class GameState {
     this.previousMenu = null;
   }
 }
-

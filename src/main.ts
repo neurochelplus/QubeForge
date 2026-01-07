@@ -274,12 +274,30 @@ function toggleInventory(useCraftingTable = false) {
 
 // Global Event Listeners
 controls.addEventListener("lock", () => {
+  // CRITICAL: This is the only place we confirm the game is back in action.
+
+  // If we were resuming (flag set by Resume button), finalize the resume.
+  if (gameState.getIsResuming()) {
+    game.menus.hidePauseMenu();
+    gameState.setIsResuming(false);
+  }
+  // Or if we just somehow got locked while paused (e.g. edge case), ensure we unpause.
+  else if (gameState.getPaused() && gameState.getGameStarted()) {
+    game.menus.hidePauseMenu();
+  }
+
   const inventoryMenu = document.getElementById("inventory-menu")!;
   if (inventoryMenu.style.display === "flex") toggleInventory();
 });
 
 controls.addEventListener("unlock", () => {
   const inventoryMenu = document.getElementById("inventory-menu")!;
+
+  // If we are in the middle of a resume attempt, IGNORE the unlock event.
+  // This prevents the menu from popping back up if the lock request
+  // momentarily triggers an unlock or fails briefly.
+  if (gameState.getIsResuming()) return;
+
   if (
     inventoryMenu.style.display !== "flex" &&
     !gameState.getPaused() &&
@@ -334,7 +352,11 @@ const onKeyDown = (event: KeyboardEvent) => {
     case "Escape":
       const invMenu = document.getElementById("inventory-menu")!;
       if (invMenu.style.display === "flex") toggleInventory();
-      else game.menus.togglePauseMenu();
+      else {
+        // Only open pause menu, never close it via ESC.
+        // Closing is done via "Resume" button which triggers lock -> hidePauseMenu.
+        game.menus.showPauseMenu();
+      }
       break;
   }
 };
@@ -374,9 +396,14 @@ function performInteract() {
 
 document.addEventListener("mousedown", (event) => {
   if (gameState.getPaused() || !gameState.getGameStarted()) return;
-  if (!controls.isLocked && !isMobile) return;
   const invMenu = document.getElementById("inventory-menu")!;
   if (invMenu.style.display === "flex") return;
+
+  // Click-to-lock fallback
+  if (!controls.isLocked && !isMobile) {
+    controls.lock();
+    return;
+  }
 
   if (event.button === 0) {
     game.isAttackPressed = true;

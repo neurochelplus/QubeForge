@@ -81,9 +81,13 @@ export class BlockInteraction {
             if (closestMob) {
                 // Swap Positions
                 const tempPos = playerPos.clone();
-                playerPos.copy(closestMob.mesh.position);
-                // Adjust Y slightly to avoid stuck
-                playerPos.y += 0.5;
+
+                // Safe Teleport for Player: Center of block + slightly up
+                const targetX = Math.floor(closestMob.mesh.position.x) + 0.5;
+                const targetZ = Math.floor(closestMob.mesh.position.z) + 0.5;
+                const targetY = closestMob.mesh.position.y + 0.5; // Lift up half block
+
+                playerPos.set(targetX, targetY, targetZ);
 
                 closestMob.mesh.position.copy(tempPos);
                 // Reset velocities

@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { World } from "../world/World";
+import { Player } from "../player/Player";
 
 export const MobState = {
   IDLE: 0,
@@ -174,10 +175,19 @@ export class Mob {
 
   update(
     delta: number,
-    playerPos?: THREE.Vector3,
+    player?: THREE.Vector3 | Player,
     onAttack?: (damage: number) => void,
     isDay?: boolean,
   ) {
+    // Resolve playerPos
+    let playerPos: THREE.Vector3 | undefined;
+    if (player instanceof THREE.Vector3) {
+      playerPos = player;
+    } else if (player) {
+      // @ts-ignore
+      playerPos = player.physics.controls.object.position;
+    }
+
     if (!this.isStunned) {
       this.updateAI(delta, playerPos, onAttack, isDay);
     }

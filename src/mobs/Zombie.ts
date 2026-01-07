@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { Mob, MobState } from "./Mob";
 import { World } from "../world/World";
+import { Player } from "../player/Player";
 
 export class Zombie extends Mob {
   protected readonly walkSpeed: number = 1.75;

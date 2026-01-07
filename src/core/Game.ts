@@ -183,7 +183,7 @@ export class Game {
     // Mobs
     this.mobManager.update(
       delta,
-      this.renderer.controls.object.position,
+      this.player, // Pass full player object
       this.environment,
       (amt) => this.player.health.takeDamage(amt),
     );

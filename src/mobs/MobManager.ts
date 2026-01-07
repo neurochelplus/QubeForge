@@ -1,11 +1,13 @@
 import * as THREE from "three";
 import { World } from "../world/World";
 import { Zombie } from "./Zombie";
+import { ChunkErrorMob } from "./ChunkErrorMob";
 import { Mob } from "./Mob";
 
 import { ItemEntity } from "../entities/ItemEntity";
 
 import { Environment } from "../world/Environment";
+import { Player } from "../player/Player";
 
 export class MobManager {
   public mobs: Mob[] = [];
@@ -25,12 +27,19 @@ export class MobManager {
 
   public update(
     delta: number,
-    playerPos: THREE.Vector3,
+    player: Player | THREE.Vector3,
     environment: Environment,
     onPlayerHit?: (damage: number) => void,
   ) {
     const now = performance.now();
     const isDay = environment.isDay;
+
+    let playerPos: THREE.Vector3;
+    if (player instanceof THREE.Vector3) {
+      playerPos = player;
+    } else {
+      playerPos = player.physics['controls'].object.position;
+    }
 
     // 1. Update existing mobs & check despawn
     for (let i = this.mobs.length - 1; i >= 0; i--) {
@@ -54,7 +63,7 @@ export class MobManager {
         continue;
       }
 
-      mob.update(delta, playerPos, onPlayerHit, isDay);
+      mob.update(delta, player, onPlayerHit, isDay);
 
       // Despawn if too far (> 80 blocks)
       const dist = mob.mesh.position.distanceTo(playerPos);
@@ -63,14 +72,19 @@ export class MobManager {
       }
     }
 
-    // 2. Spawn logic (Only at Night)
+    // 2. Spawn logic (Only at Night or ChunkError special spawn)
     if (
-      !isDay &&
       this.mobs.length < this.MAX_MOBS &&
       now - this.lastSpawnTime > this.spawnInterval
     ) {
-      this.attemptSpawn(playerPos);
-      this.lastSpawnTime = now + Math.random() * 5000;
+      // ChunkError can spawn at day too? User didn't specify, assuming normal spawn rules or rare spawn
+      // Let's spawn zombies only at night, but maybe ChunkError anytime?
+      // "Status: Neutral".
+      // Let's stick to Night spawning for monsters, but add small chance for ChunkError
+      if (!isDay) {
+        this.attemptSpawn(playerPos);
+        this.lastSpawnTime = now + Math.random() * 5000;
+      }
     }
   }
 
@@ -95,15 +109,16 @@ export class MobManager {
 
       if (y !== -1) {
         // Found valid ground
-        const zombie = new Zombie(
-          this.world,
-          this.scene,
-          x + 0.5,
-          y + 1,
-          z + 0.5,
-        );
-        this.mobs.push(zombie);
-        // console.log(`Spawned Zombie at ${x}, ${y+1}, ${z}`);
+        // 20% Chance for Chunk Error
+        let mob: Mob;
+        if (Math.random() < 0.2) {
+             mob = new ChunkErrorMob(this.world, this.scene, x + 0.5, y + 1, z + 0.5);
+        } else {
+             mob = new Zombie(this.world, this.scene, x + 0.5, y + 1, z + 0.5);
+        }
+
+        this.mobs.push(mob);
+        // console.log(`Spawned Mob at ${x}, ${y+1}, ${z}`);
         break; // Spawned one, stop trying
       }
     }

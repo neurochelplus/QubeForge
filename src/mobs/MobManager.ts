@@ -42,7 +42,7 @@ export class MobManager {
     if (player instanceof THREE.Vector3) {
       playerPos = player;
     } else {
-      playerPos = player.physics['controls'].object.position;
+      playerPos = player.physics.controls.object.position;
     }
 
     // 1. Update existing mobs & check despawn
@@ -122,7 +122,7 @@ export class MobManager {
       // Determine camera direction
       let dir = new THREE.Vector3(0, 0, -1);
       if (player instanceof Player) {
-          player.physics['controls'].getDirection(dir);
+          player.physics.controls.getDirection(dir);
       }
       // If we don't have direction (Player param is just Vector3), pick random
       if (!(player instanceof Player)) {

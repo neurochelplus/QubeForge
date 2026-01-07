@@ -10,7 +10,7 @@ import {
 } from "../constants/GameConstants";
 
 export class PlayerPhysics {
-  private controls: PointerLockControls;
+  public controls: PointerLockControls;
   private world: World;
   private velocity: THREE.Vector3;
 

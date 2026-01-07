@@ -11,6 +11,12 @@ export class ChunkErrorMob extends Mob {
   // Body Parts
   private head: THREE.Mesh;
   private body: THREE.Mesh;
+  private leftEye: THREE.Mesh;
+  private rightEye: THREE.Mesh;
+  private mouth: THREE.Mesh;
+
+  // Glitch Effect
+  private glitchTimer = 0;
 
   constructor(
     world: World,
@@ -166,23 +172,23 @@ export class ChunkErrorMob extends Mob {
 
     // Left Eye
     const eyeGeo = new THREE.PlaneGeometry(0.2, 0.2);
-    const leftEye = new THREE.Mesh(eyeGeo, glitchMat);
+    this.leftEye = new THREE.Mesh(eyeGeo, glitchMat);
     // On Z+ Face (0.4 + epsilon).
     // Head center is 1.5. Width 0.8. Z+ face is at z=0.4 relative to head center.
     // Positions relative to head center (0,0,0)
-    leftEye.position.set(-0.2, 0.1, 0.41);
-    this.head.add(leftEye);
+    this.leftEye.position.set(-0.2, 0.1, 0.41);
+    this.head.add(this.leftEye);
 
     // Right Eye
-    const rightEye = new THREE.Mesh(eyeGeo, glitchMat);
-    rightEye.position.set(0.2, 0.1, 0.41);
-    this.head.add(rightEye);
+    this.rightEye = new THREE.Mesh(eyeGeo, glitchMat);
+    this.rightEye.position.set(0.2, 0.1, 0.41);
+    this.head.add(this.rightEye);
 
     // Mouth
     const mouthGeo = new THREE.PlaneGeometry(0.6, 0.15);
-    const mouth = new THREE.Mesh(mouthGeo, glitchMat);
-    mouth.position.set(0, -0.2, 0.41);
-    this.head.add(mouth);
+    this.mouth = new THREE.Mesh(mouthGeo, glitchMat);
+    this.mouth.position.set(0, -0.2, 0.41);
+    this.head.add(this.mouth);
   }
 
   // Override takeDamage to apply Inverted Controls
@@ -210,7 +216,7 @@ export class ChunkErrorMob extends Mob {
 
     if (player && (player as any).physics) {
         playerInstance = player as Player;
-        playerPos = playerInstance.physics['controls'].object.position;
+        playerPos = playerInstance.physics.controls.object.position;
     } else if (player instanceof THREE.Vector3) {
         playerPos = player;
     }
@@ -231,8 +237,48 @@ export class ChunkErrorMob extends Mob {
         // Rotation Lock: Always look same direction as player
         // Player rotation is in controls.object.rotation.y (Camera rotation)
         // But PointerLockControls object rotation is the camera rotation.
-        const playerRotY = playerInstance.physics['controls'].object.rotation.y;
+        const playerRotY = playerInstance.physics.controls.object.rotation.y;
         this.mesh.rotation.y = playerRotY;
+    }
+
+    // --- Glitch Effect on Eyes/Mouth ---
+    this.glitchTimer += delta;
+    if (this.glitchTimer > 1.0) {
+        // Apply jitter
+        const jitter = 0.05;
+        this.leftEye.position.set(
+            -0.2 + (Math.random() - 0.5) * jitter,
+            0.1 + (Math.random() - 0.5) * jitter,
+            0.41
+        );
+        this.rightEye.position.set(
+            0.2 + (Math.random() - 0.5) * jitter,
+            0.1 + (Math.random() - 0.5) * jitter,
+            0.41
+        );
+        this.mouth.position.set(
+            0 + (Math.random() - 0.5) * jitter,
+            -0.2 + (Math.random() - 0.5) * jitter,
+            0.41
+        );
+
+        // Scale distortion
+        this.leftEye.scale.setScalar(0.8 + Math.random() * 0.4);
+        this.rightEye.scale.setScalar(0.8 + Math.random() * 0.4);
+        this.mouth.scale.set(1.0 + (Math.random()-0.5)*0.5, 1.0 + (Math.random()-0.5)*0.5, 1);
+
+        if (this.glitchTimer > 1.1) {
+            // Reset
+            this.leftEye.position.set(-0.2, 0.1, 0.41);
+            this.rightEye.position.set(0.2, 0.1, 0.41);
+            this.mouth.position.set(0, -0.2, 0.41);
+
+            this.leftEye.scale.set(1,1,1);
+            this.rightEye.scale.set(1,1,1);
+            this.mouth.scale.set(1,1,1);
+
+            this.glitchTimer = 0;
+        }
     }
   }
 

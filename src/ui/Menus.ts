@@ -116,6 +116,23 @@ export class Menus {
     this.mainMenu.style.display = "none";
     this.settingsMenu.style.display = "none";
     this.game.renderer.controls.unlock();
+
+    // PC-specific Cooldown to match browser Pointer Lock security delay (~1.3s)
+    if (!this.game.renderer.getIsMobile()) {
+      this.btnResume.style.pointerEvents = "none";
+      this.btnResume.style.opacity = "0.5";
+      const originalText = this.btnResume.innerText;
+      this.btnResume.innerText = "Wait...";
+
+      setTimeout(() => {
+        // Only restore if we are still in the menu (though harmless if not)
+        if (this.pauseMenu.style.display === "flex") {
+          this.btnResume.style.pointerEvents = "auto";
+          this.btnResume.style.opacity = "1";
+          this.btnResume.innerText = "Resume";
+        }
+      }, 1300);
+    }
   }
 
   public hidePauseMenu() {

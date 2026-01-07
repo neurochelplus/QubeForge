@@ -83,12 +83,17 @@ export class BlockInteraction {
                 const tempPos = playerPos.clone();
 
                 // Safe Teleport for Player: Center of block + slightly up
-                const targetX = Math.floor(closestMob.mesh.position.x) + 0.5;
-                const targetZ = Math.floor(closestMob.mesh.position.z) + 0.5;
-                // Move slightly above the block the mob is standing on (or in)
-                const targetY = Math.floor(closestMob.mesh.position.y) + 0.2;
+                const tx = Math.floor(closestMob.mesh.position.x);
+                const tz = Math.floor(closestMob.mesh.position.z);
 
-                playerPos.set(targetX, targetY, targetZ);
+                // Get terrain height to prevent stuck inside blocks
+                let topY = world.getTopY(tx, tz);
+                if (topY <= 0) topY = Math.floor(closestMob.mesh.position.y); // Fallback
+
+                // Player stands ON TOP of the block (topY is the block itself)
+                const targetY = topY + 1.0;
+
+                playerPos.set(tx + 0.5, targetY, tz + 0.5);
 
                 closestMob.mesh.position.copy(tempPos);
                 // Reset velocities

@@ -366,7 +366,9 @@ export class ChunkErrorMob extends Mob {
              const worldZ = Math.floor(targetZ);
              const targetY = this.world.getTopY(worldX, worldZ);
 
-             if (targetY > 0 && Math.abs(targetY - this.mesh.position.y) < 5) {
+             // Allow climbing up 5 blocks, but dropping down up to 15 blocks
+             // This solves the issue of getting stuck on trees
+             if (targetY > 0 && (targetY - this.mesh.position.y < 5) && (this.mesh.position.y - targetY < 15)) {
                  this.mesh.position.set(targetX, targetY + 1, targetZ);
                  this.velocity.set(0, 0, 0);
              } else {

@@ -181,6 +181,16 @@ const blockInteraction = new BlockInteraction(
   cursorMesh,
   crackMesh,
   () => mobManager.mobs,
+  () => {
+    // onConsumeItem
+    const slot = inventory.getSelectedSlotItem();
+    if (slot.count > 0) {
+      slot.count--;
+      if (slot.count === 0) slot.id = 0;
+      inventoryUI.refresh();
+      if (inventoryUI.onInventoryChange) inventoryUI.onInventoryChange();
+    }
+  }
 );
 
 const game = new Game(

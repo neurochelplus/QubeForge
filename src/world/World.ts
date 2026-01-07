@@ -23,6 +23,7 @@ export const BLOCK = {
   STONE_AXE: 25,
   WOODEN_SHOVEL: 26,
   STONE_SHOVEL: 27,
+  BROKEN_COMPASS: 30,
 };
 
 type Chunk = {

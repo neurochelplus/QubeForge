@@ -181,6 +181,21 @@ export class MobManager {
         this.chunkErrorActive = false;
         // Respawn timer: 1.5 - 2.5 minutes (90 - 150 seconds)
         this.chunkErrorCooldown = 90 + Math.random() * 60;
+
+        // Drop Broken Compass
+        if (mob.isDead) {
+             this.entities.push(
+                new ItemEntity(
+                  this.world,
+                  this.scene,
+                  mob.mesh.position.x,
+                  mob.mesh.position.y,
+                  mob.mesh.position.z,
+                  30, // BROKEN_COMPASS
+                  this.world.noiseTexture
+                )
+             );
+        }
     }
 
     this.scene.remove(mob.mesh);

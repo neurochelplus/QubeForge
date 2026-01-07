@@ -27,6 +27,7 @@ export class BlockInteraction {
     blockId: number,
   ) => boolean;
   private onOpenCraftingTable?: () => void;
+  private onConsumeItem?: () => void;
 
   constructor(
     camera: PerspectiveCamera,
@@ -43,6 +44,7 @@ export class BlockInteraction {
     cursorMesh?: THREE.Mesh,
     crackMesh?: THREE.Mesh,
     getMobs?: () => Mob[],
+    onConsumeItem?: () => void
   ) {
     this.camera = camera;
     this.scene = scene;
@@ -53,10 +55,49 @@ export class BlockInteraction {
     this.cursorMesh = cursorMesh;
     this.crackMesh = crackMesh;
     this.getMobs = getMobs;
+    this.onConsumeItem = onConsumeItem;
     this.raycaster = new THREE.Raycaster();
   }
 
   public interact(world: World): void {
+    // 1. Check Item Usage (Broken Compass)
+    const slot = this.getSelectedSlotItem();
+    if (slot.id === BLOCK.BROKEN_COMPASS) {
+        if (this.getMobs) {
+            const mobs = this.getMobs();
+            let closestMob: Mob | null = null;
+            let minDist = 15.0; // Radius 15
+
+            const playerPos = this.controls.object.position;
+
+            for (const mob of mobs) {
+                const dist = playerPos.distanceTo(mob.mesh.position);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closestMob = mob;
+                }
+            }
+
+            if (closestMob) {
+                // Swap Positions
+                const tempPos = playerPos.clone();
+                playerPos.copy(closestMob.mesh.position);
+                // Adjust Y slightly to avoid stuck
+                playerPos.y += 0.5;
+
+                closestMob.mesh.position.copy(tempPos);
+                // Reset velocities
+                if ((this.controls as any).velocity) (this.controls as any).velocity.set(0,0,0);
+                (closestMob as any).velocity.set(0,0,0);
+
+                // Consume Item
+                if (this.onConsumeItem) this.onConsumeItem();
+
+                return; // Stop interaction
+            }
+        }
+    }
+
     this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
     const intersects = this.raycaster.intersectObjects(this.scene.children);
     const hit = intersects.find(

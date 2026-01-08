@@ -376,6 +376,14 @@ export function initToolTextures() {
       );
     }
 
+    // Generate Furnace Icon
+    if (BLOCK_DEFS.FURNACE_FRONT) {
+      TOOL_TEXTURES[BLOCK.FURNACE] = generateBlockIcon(
+        BLOCK_DEFS.FURNACE_FRONT.pattern,
+        BLOCK_DEFS.FURNACE_FRONT.colors,
+      );
+    }
+
     console.log("Tool textures generated.");
   } catch (e) {
     console.error("Failed to generate tool textures:", e);

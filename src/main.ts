@@ -99,7 +99,7 @@ const blockBreaking = new BlockBreaking(
               z,
               d.id,
               world.noiseTexture,
-              toolTexture,
+              d.id === 14 ? null : toolTexture, // Force null for Furnace
               d.count,
             ),
           );
@@ -155,7 +155,7 @@ const blockBreaking = new BlockBreaking(
             z,
             dropId,
             world.noiseTexture,
-            toolTexture,
+            dropId === 14 ? null : toolTexture, // Force null for Furnace to render as block
           ),
         );
       }

@@ -87,21 +87,26 @@ export class FurnaceUI {
     this.inputSlot.addEventListener("mousedown", (e) =>
       handleSlot(e, "input", e.button),
     );
-    this.inputSlot.addEventListener("touchstart", (e) =>
-      handleSlot(e, "input"),
-    );
+    this.inputSlot.addEventListener("touchstart", (e) => {
+      e.preventDefault(); // Stop mouse emulation
+      handleSlot(e, "input");
+    });
 
     this.fuelSlot.addEventListener("mousedown", (e) =>
       handleSlot(e, "fuel", e.button),
     );
-    this.fuelSlot.addEventListener("touchstart", (e) => handleSlot(e, "fuel"));
+    this.fuelSlot.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      handleSlot(e, "fuel");
+    });
 
     this.outputSlot.addEventListener("mousedown", (e) =>
       handleSlot(e, "output", e.button),
     );
-    this.outputSlot.addEventListener("touchstart", (e) =>
-      handleSlot(e, "output"),
-    );
+    this.outputSlot.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      handleSlot(e, "output");
+    });
   }
   public open(x: number, y: number, z: number) {
     this.currentFurnacePos = { x, y, z };
@@ -199,6 +204,13 @@ export class FurnaceUI {
 
     let dragged = this.dragDrop.getDraggedItem();
     const slotItem = furnace[type];
+
+    // Mobile Fix: If we are dragging something, but the UI thinks we aren't (or vice versa), force sync?
+    // Actually, sticky usually means 'dragged' is set, but we expect it to be null after drop.
+    // If we tap a slot and we are holding something, we drop it.
+    // The issue might be that `handleSlotClick` logic for drop/place is working, but maybe `dragDrop.setDraggedItem` isn't updating visuals fast enough on mobile?
+    // Or maybe the touch event is firing multiple times?
+    // We added preventDefault, so that should be fine.
 
     if (type === "output") {
       if (slotItem.id === 0) return;

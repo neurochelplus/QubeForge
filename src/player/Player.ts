@@ -21,11 +21,12 @@ export class Player {
     scene: THREE.Scene,
     uiCamera: THREE.PerspectiveCamera,
     inventoryIdGetter: () => number,
+    onToolUse: (amount: number) => void,
     cursorMesh: THREE.Mesh,
     crackMesh: THREE.Mesh,
     damageOverlay: HTMLElement,
     healthBar: HealthBar,
-    noiseTexture: THREE.Texture,
+    noiseTexture: THREE.DataTexture,
     toolTextures: any,
   ) {
     this.physics = new PlayerPhysics(controls, world);
@@ -46,6 +47,7 @@ export class Player {
       scene,
       controls,
       inventoryIdGetter,
+      onToolUse,
       cursorMesh,
       crackMesh,
     );
@@ -69,10 +71,8 @@ export class Player {
         : baseFov;
 
     // Smoothly interpolate FOV
-    const currentFov = this.health.camera.fov; // Access camera via health or store it in Player
-    // Actually PlayerHealth has the camera, but maybe we should store it in Player too or access via controls object if it was a camera (controls.object is camera).
-    // physics.controls.object is the camera.
     const camera = this.physics.controls.object as THREE.PerspectiveCamera;
+    const currentFov = camera.fov;
 
     if (Math.abs(currentFov - targetFov) > 0.1) {
       camera.fov = MathUtils.lerp(currentFov, targetFov, delta * 5);

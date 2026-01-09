@@ -79,6 +79,32 @@ export const RECIPES: Recipe[] = [
     pattern: ["C", "S", "S"],
     keys: { C: BLOCK.STONE, S: BLOCK.STICK },
   },
+  // --- TOOLS (Iron) ---
+  {
+    result: { id: BLOCK.IRON_PICKAXE, count: 1 },
+    pattern: ["III", " S ", " S "],
+    keys: { I: BLOCK.IRON_INGOT, S: BLOCK.STICK },
+  },
+  {
+    result: { id: BLOCK.IRON_AXE, count: 1 },
+    pattern: ["II", "IS", " S"],
+    keys: { I: BLOCK.IRON_INGOT, S: BLOCK.STICK },
+  },
+  {
+    result: { id: BLOCK.IRON_AXE, count: 1 },
+    pattern: ["II", "SI", "S "],
+    keys: { I: BLOCK.IRON_INGOT, S: BLOCK.STICK },
+  },
+  {
+    result: { id: BLOCK.IRON_SWORD, count: 1 },
+    pattern: ["I", "I", "S"],
+    keys: { I: BLOCK.IRON_INGOT, S: BLOCK.STICK },
+  },
+  {
+    result: { id: BLOCK.IRON_SHOVEL, count: 1 },
+    pattern: ["I", "S", "S"],
+    keys: { I: BLOCK.IRON_INGOT, S: BLOCK.STICK },
+  },
   // --- RESOURCES ---
   {
     result: { id: BLOCK.FURNACE, count: 1 },

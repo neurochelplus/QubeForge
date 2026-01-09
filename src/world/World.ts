@@ -488,25 +488,29 @@ export class World {
     switch (blockType) {
       case BLOCK.GRASS:
       case BLOCK.DIRT:
-        if (toolId === BLOCK.STONE_SHOVEL) time = 200;
+        if (toolId === BLOCK.IRON_SHOVEL) time = 100;
+        else if (toolId === BLOCK.STONE_SHOVEL) time = 200;
         else if (toolId === BLOCK.WOODEN_SHOVEL) time = 400;
         else time = 750;
         break;
 
       case BLOCK.STONE:
-        if (toolId === BLOCK.STONE_PICKAXE) time = 600;
+        if (toolId === BLOCK.IRON_PICKAXE) time = 400;
+        else if (toolId === BLOCK.STONE_PICKAXE) time = 600;
         else if (toolId === BLOCK.WOODEN_PICKAXE) time = 1150;
         else time = 7500;
         break;
 
       case BLOCK.IRON_ORE:
-        if (toolId === BLOCK.STONE_PICKAXE) time = 1150;
+        if (toolId === BLOCK.IRON_PICKAXE) time = 800;
+        else if (toolId === BLOCK.STONE_PICKAXE) time = 1150;
         else if (toolId === BLOCK.WOODEN_PICKAXE) time = 7500;
         else time = 15000;
         break;
 
       case BLOCK.COAL_ORE:
-        if (toolId === BLOCK.STONE_PICKAXE) time = 1150;
+        if (toolId === BLOCK.IRON_PICKAXE) time = 800;
+        else if (toolId === BLOCK.STONE_PICKAXE) time = 1150;
         else if (toolId === BLOCK.WOODEN_PICKAXE) time = 2250;
         else time = 15000;
         break;
@@ -517,13 +521,15 @@ export class World {
       case BLOCK.WOOD:
       case BLOCK.PLANKS:
         // Keep existing logic for wood/planks (approx 3s base / multiplier)
-        // Or simplify. Let's keep a reasonable default for wood.
-        // Previous logic: Base 3000. Axe x2 (Wood/Stone?).
-        // Let's preserve roughly previous behavior for non-specified blocks.
-        // Wood/Planks: 3000 / multiplier.
         let multiplier = 1;
-        if (toolId === BLOCK.WOODEN_AXE || toolId === BLOCK.STONE_AXE) {
-          multiplier = toolId === BLOCK.STONE_AXE ? 4 : 2;
+        if (
+          toolId === BLOCK.WOODEN_AXE ||
+          toolId === BLOCK.STONE_AXE ||
+          toolId === BLOCK.IRON_AXE
+        ) {
+          if (toolId === BLOCK.IRON_AXE) multiplier = 8;
+          else if (toolId === BLOCK.STONE_AXE) multiplier = 4;
+          else multiplier = 2;
         }
         time = 3000 / multiplier;
         break;

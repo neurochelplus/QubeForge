@@ -18,6 +18,8 @@ import { FurnaceManager } from "../crafting/FurnaceManager";
 import { MobileControls } from "../mobile/MobileControls";
 import { CLI } from "../ui/CLI";
 import { Menus } from "../ui/Menus";
+import { BLOCK } from "../constants/Blocks";
+import { TOOL_DURABILITY } from "../constants/GameConstants";
 
 /**
  * Главный класс игры, координирующий все системы
@@ -72,6 +74,13 @@ export class Game {
     this.entities = entities;
     this.mobManager = mobManager;
     this.player = player;
+    // Inject handleToolUse into Player (since we construct Player outside in main.ts usually, wait...
+    // Game constructor receives Player. So Player is already created.
+    // We need to pass handleToolUse to Player constructor in main.ts.
+    // Or we can assign it here if Player has a setter or public field.
+    // But PlayerCombat is created in Player constructor.
+    // Let's check main.ts.
+    
     this.blockCursor = blockCursor;
     this.blockBreaking = blockBreaking;
     this.blockInteraction = blockInteraction;
@@ -138,6 +147,57 @@ export class Game {
   /**
    * Обновление игрового состояния
    */
+  public handleToolUse = (amount: number): void => {
+    const slotIndex = this.inventory.getSelectedSlot();
+    const slot = this.inventory.getSlot(slotIndex);
+
+    if (slot.id >= 20 && slot.id < 40) {
+      // Initialize durability if missing
+      if (slot.durability === undefined) {
+        let max = 60; // Default Wood
+        if (
+          slot.id === BLOCK.STONE_SWORD ||
+          slot.id === BLOCK.STONE_PICKAXE ||
+          slot.id === BLOCK.STONE_AXE ||
+          slot.id === BLOCK.STONE_SHOVEL
+        ) {
+          max = TOOL_DURABILITY.STONE;
+        } else if (
+          slot.id === BLOCK.IRON_SWORD ||
+          slot.id === BLOCK.IRON_PICKAXE ||
+          slot.id === BLOCK.IRON_AXE ||
+          slot.id === BLOCK.IRON_SHOVEL
+        ) {
+          max = TOOL_DURABILITY.IRON;
+        } else if (
+            slot.id === BLOCK.WOODEN_SWORD ||
+            slot.id === BLOCK.WOODEN_PICKAXE ||
+            slot.id === BLOCK.WOODEN_AXE ||
+            slot.id === BLOCK.WOODEN_SHOVEL
+        ) {
+            max = TOOL_DURABILITY.WOOD;
+        }
+
+        slot.maxDurability = max;
+        slot.durability = max;
+      }
+
+      slot.durability -= amount;
+
+      if (slot.durability <= 0) {
+        // Break tool
+        this.inventory.setSlot(slotIndex, { id: 0, count: 0 });
+        // Play sound?
+      } else {
+        this.inventory.setSlot(slotIndex, slot);
+      }
+      
+      this.inventoryUI.refresh();
+      if (this.inventoryUI.onInventoryChange)
+        this.inventoryUI.onInventoryChange();
+    }
+  };
+
   private update(): void {
     const time = performance.now();
     const delta = (time - this.prevTime) / 1000;

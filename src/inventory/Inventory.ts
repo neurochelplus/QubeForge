@@ -3,6 +3,8 @@
 export type InventorySlot = {
   id: number;
   count: number;
+  durability?: number;
+  maxDurability?: number;
 };
 
 export class Inventory {
@@ -69,6 +71,11 @@ export class Inventory {
         const add = Math.min(remaining, maxStack);
         this.slots[i].id = id;
         this.slots[i].count = add;
+        
+        // Reset durability for new items if not specified
+        delete this.slots[i].durability;
+        delete this.slots[i].maxDurability;
+
         remaining -= add;
         if (remaining === 0) return 0;
       }
@@ -86,6 +93,8 @@ export class Inventory {
         remaining -= take;
         if (this.slots[i].count === 0) {
           this.slots[i].id = 0;
+          delete this.slots[i].durability;
+          delete this.slots[i].maxDurability;
         }
         if (remaining <= 0) return true;
       }

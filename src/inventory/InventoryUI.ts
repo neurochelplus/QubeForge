@@ -165,6 +165,11 @@ export class InventoryUI {
     count.innerText = "";
     div.appendChild(count);
 
+    const durability = document.createElement("div");
+    durability.classList.add("slot-durability");
+    durability.style.display = "none";
+    div.appendChild(durability);
+
     // Events
     div.addEventListener("mouseenter", () => {
       const slot = this.inventory.getSlot(index);
@@ -228,6 +233,7 @@ export class InventoryUI {
 
       const icon = el.querySelector(".block-icon") as HTMLElement;
       const countEl = el.querySelector(".slot-count") as HTMLElement;
+      const durabilityEl = el.querySelector(".slot-durability") as HTMLElement;
 
       if (slot.id !== 0 && slot.count > 0) {
         icon.style.display = "block";
@@ -252,9 +258,24 @@ export class InventoryUI {
         }
 
         countEl.innerText = slot.count.toString();
+
+        if (slot.durability !== undefined && slot.maxDurability !== undefined) {
+            durabilityEl.style.display = "block";
+            const percent = slot.durability / slot.maxDurability;
+            durabilityEl.style.width = `${percent * 100}%`;
+            
+            // Color based on health
+            if (percent > 0.5) durabilityEl.style.backgroundColor = "#00ff00"; // Green
+            else if (percent > 0.2) durabilityEl.style.backgroundColor = "#ffff00"; // Yellow
+            else durabilityEl.style.backgroundColor = "#ff0000"; // Red
+        } else {
+            durabilityEl.style.display = "none";
+        }
+
       } else {
         icon.style.display = "none";
         countEl.innerText = "";
+        durabilityEl.style.display = "none";
       }
     });
   }

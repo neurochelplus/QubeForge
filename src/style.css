@@ -134,6 +134,16 @@ canvas {
     text-shadow: 1px 1px 0 #000;
     pointer-events: none;
 }
+.slot-durability {
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    width: 36px; /* 40px slot - 2px padding * 2 */
+    height: 2px;
+    background-color: #00ff00;
+    pointer-events: none;
+    z-index: 5;
+}
 .block-icon {
     width: 24px;
     height: 24px;

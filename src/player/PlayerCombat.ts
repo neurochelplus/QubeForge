@@ -11,6 +11,7 @@ export class PlayerCombat {
   private controls: PointerLockControls;
   private lastAttackTime: number = 0;
   private getSelectedSlotItem: () => number;
+  private onToolUse?: (amount: number) => void;
   private cursorMesh?: THREE.Mesh;
   private crackMesh?: THREE.Mesh;
 
@@ -19,6 +20,7 @@ export class PlayerCombat {
     scene: THREE.Scene,
     controls: PointerLockControls,
     getSelectedSlotItem: () => number,
+    onToolUse?: (amount: number) => void,
     cursorMesh?: THREE.Mesh,
     crackMesh?: THREE.Mesh,
   ) {
@@ -26,20 +28,29 @@ export class PlayerCombat {
     this.scene = scene;
     this.controls = controls;
     this.getSelectedSlotItem = getSelectedSlotItem;
+    this.onToolUse = onToolUse;
     this.raycaster = new THREE.Raycaster();
     this.cursorMesh = cursorMesh;
     this.crackMesh = crackMesh;
   }
 
   private calculateDamage(toolId: number): number {
-    if (toolId === 20) return 4; // Wood Sword
-    if (toolId === 21) return 5; // Stone Sword
-    if (toolId === 24) return 3; // Wood Axe
-    if (toolId === 25) return 4; // Stone Axe
-    if (toolId === 22) return 2; // Wood Pick
-    if (toolId === 23) return 3; // Stone Pick
-    if (toolId === 26) return 1.5; // Wood Shovel
-    if (toolId === 27) return 2.5; // Stone Shovel
+    if (toolId === BLOCK.WOODEN_SWORD) return 4;
+    if (toolId === BLOCK.STONE_SWORD) return 5;
+    if (toolId === BLOCK.IRON_SWORD) return 6;
+
+    if (toolId === BLOCK.WOODEN_AXE) return 3;
+    if (toolId === BLOCK.STONE_AXE) return 4;
+    if (toolId === BLOCK.IRON_AXE) return 5;
+
+    if (toolId === BLOCK.WOODEN_PICKAXE) return 2;
+    if (toolId === BLOCK.STONE_PICKAXE) return 3;
+    if (toolId === BLOCK.IRON_PICKAXE) return 4;
+
+    if (toolId === BLOCK.WOODEN_SHOVEL) return 1.5;
+    if (toolId === BLOCK.STONE_SHOVEL) return 2.5;
+    if (toolId === BLOCK.IRON_SHOVEL) return 3.5;
+
     return 1; // Punch
   }
 
@@ -73,6 +84,12 @@ export class PlayerCombat {
 
       if (isMob && obj) {
         obj.userData.mob.takeDamage(damage, this.controls.object.position);
+        
+        // Reduce durability on hit (2 for weapons/tools used as weapons)
+        if (this.onToolUse) {
+            this.onToolUse(2);
+        }
+
         return true; // Hit mob
       }
 

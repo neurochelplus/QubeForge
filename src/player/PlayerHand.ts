@@ -49,6 +49,10 @@ export class PlayerHand {
     if (id === BLOCK.STONE_AXE) return TOOL_DEFS.STONE_AXE;
     if (id === BLOCK.WOODEN_SHOVEL) return TOOL_DEFS.WOODEN_SHOVEL;
     if (id === BLOCK.STONE_SHOVEL) return TOOL_DEFS.STONE_SHOVEL;
+    if (id === BLOCK.IRON_SWORD) return TOOL_DEFS.IRON_SWORD;
+    if (id === BLOCK.IRON_PICKAXE) return TOOL_DEFS.IRON_PICKAXE;
+    if (id === BLOCK.IRON_AXE) return TOOL_DEFS.IRON_AXE;
+    if (id === BLOCK.IRON_SHOVEL) return TOOL_DEFS.IRON_SHOVEL;
     if (id === BLOCK.STICK) return TOOL_DEFS.STICK;
     if (id === BLOCK.BROKEN_COMPASS) return TOOL_DEFS.BROKEN_COMPASS;
     if (id === BLOCK.COAL) return TOOL_DEFS.COAL;
@@ -59,7 +63,11 @@ export class PlayerHand {
   }
 
   private isSword(id: number): boolean {
-    return id === BLOCK.WOODEN_SWORD || id === BLOCK.STONE_SWORD;
+    return (
+      id === BLOCK.WOODEN_SWORD ||
+      id === BLOCK.STONE_SWORD ||
+      id === BLOCK.IRON_SWORD
+    );
   }
 
   private createToolMesh(def: any): THREE.Mesh {

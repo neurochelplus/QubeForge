@@ -163,6 +163,7 @@ const COLORS = {
   HANDLE: "#5C4033", // Dark Brown
   WOOD: "#8B5A2B", // Wood Planks Color
   STONE: "#7d7d7d", // Stone Color
+  IRON_TOOL: "#E6E6E6", // Iron Tool Color
   SILVER: "#C0C0C0", // Compass Case & Iron
   RED: "#FF0000", // Needle
   BLACK: "#000000", // Border
@@ -298,6 +299,10 @@ export const TOOL_DEFS = {
   STONE_AXE: { pattern: AXE_PATTERN, color: COLORS.STONE },
   WOODEN_SHOVEL: { pattern: SHOVEL_PATTERN, color: COLORS.WOOD },
   STONE_SHOVEL: { pattern: SHOVEL_PATTERN, color: COLORS.STONE },
+  IRON_SWORD: { pattern: SWORD_PATTERN, color: COLORS.IRON_TOOL },
+  IRON_PICKAXE: { pattern: PICKAXE_PATTERN, color: COLORS.IRON_TOOL },
+  IRON_AXE: { pattern: AXE_PATTERN, color: COLORS.IRON_TOOL },
+  IRON_SHOVEL: { pattern: SHOVEL_PATTERN, color: COLORS.IRON_TOOL },
   BROKEN_COMPASS: { pattern: COMPASS_PATTERN, color: COLORS.SILVER },
   COAL: { pattern: COAL_PATTERN, color: COLORS.COAL },
   IRON_INGOT: { pattern: INGOT_PATTERN, color: COLORS.IRON },
@@ -356,6 +361,23 @@ export function initToolTextures() {
     TOOL_TEXTURES[BLOCK.STONE_SHOVEL] = generateToolTexture(
       TOOL_DEFS.STONE_SHOVEL.pattern,
       TOOL_DEFS.STONE_SHOVEL.color,
+    );
+
+    TOOL_TEXTURES[BLOCK.IRON_SWORD] = generateToolTexture(
+      TOOL_DEFS.IRON_SWORD.pattern,
+      TOOL_DEFS.IRON_SWORD.color,
+    );
+    TOOL_TEXTURES[BLOCK.IRON_PICKAXE] = generateToolTexture(
+      TOOL_DEFS.IRON_PICKAXE.pattern,
+      TOOL_DEFS.IRON_PICKAXE.color,
+    );
+    TOOL_TEXTURES[BLOCK.IRON_AXE] = generateToolTexture(
+      TOOL_DEFS.IRON_AXE.pattern,
+      TOOL_DEFS.IRON_AXE.color,
+    );
+    TOOL_TEXTURES[BLOCK.IRON_SHOVEL] = generateToolTexture(
+      TOOL_DEFS.IRON_SHOVEL.pattern,
+      TOOL_DEFS.IRON_SHOVEL.color,
     );
 
     TOOL_TEXTURES[BLOCK.BROKEN_COMPASS] = generateToolTexture(

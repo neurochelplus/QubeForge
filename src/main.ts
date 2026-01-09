@@ -74,6 +74,8 @@ const blockBreaking = new BlockBreaking(
   controls,
   () => inventory.getSelectedSlotItem().id,
   (x, y, z, id) => {
+    if (game) game.handleToolUse(1); // Reduce durability by 1
+
     // Drop Item Logic
     if (id !== 0) {
       if (id === BLOCK.FURNACE) {
@@ -173,6 +175,9 @@ const player = new Player(
   scene,
   uiCamera,
   () => inventory.getSelectedSlotItem().id,
+  (amount) => {
+    if (game) game.handleToolUse(amount);
+  },
   cursorMesh,
   crackMesh,
   damageOverlay,

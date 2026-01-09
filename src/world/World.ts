@@ -495,6 +495,7 @@ export class World {
         break;
 
       case BLOCK.STONE:
+      case BLOCK.FURNACE:
         if (toolId === BLOCK.IRON_PICKAXE) time = 400;
         else if (toolId === BLOCK.STONE_PICKAXE) time = 600;
         else if (toolId === BLOCK.WOODEN_PICKAXE) time = 1150;

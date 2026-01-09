@@ -115,23 +115,35 @@ const blockBreaking = new BlockBreaking(
       // Drop Rules
       if (id === BLOCK.STONE) {
         // Stone: Only drops with Pickaxes
-        if (toolId !== BLOCK.WOODEN_PICKAXE && toolId !== BLOCK.STONE_PICKAXE) {
+        if (
+          toolId !== BLOCK.WOODEN_PICKAXE &&
+          toolId !== BLOCK.STONE_PICKAXE &&
+          toolId !== BLOCK.IRON_PICKAXE
+        ) {
           shouldDrop = false;
         }
       } else if (id === BLOCK.IRON_ORE) {
         // Iron Ore: Only drops with Stone Pickaxe (or better)
-        if (toolId !== BLOCK.STONE_PICKAXE) {
+        if (toolId !== BLOCK.STONE_PICKAXE && toolId !== BLOCK.IRON_PICKAXE) {
           shouldDrop = false;
         }
       } else if (id === BLOCK.COAL_ORE) {
-        // Coal Ore: Drops with Wooden or Stone Pickaxe
-        if (toolId !== BLOCK.WOODEN_PICKAXE && toolId !== BLOCK.STONE_PICKAXE) {
+        // Coal Ore: Drops with any Pickaxe
+        if (
+          toolId !== BLOCK.WOODEN_PICKAXE &&
+          toolId !== BLOCK.STONE_PICKAXE &&
+          toolId !== BLOCK.IRON_PICKAXE
+        ) {
           shouldDrop = false;
         } else {
           dropId = BLOCK.COAL; // Drop Coal item
         }
       } else if (id === BLOCK.FURNACE) {
-        if (toolId !== BLOCK.WOODEN_PICKAXE && toolId !== BLOCK.STONE_PICKAXE) {
+        if (
+          toolId !== BLOCK.WOODEN_PICKAXE &&
+          toolId !== BLOCK.STONE_PICKAXE &&
+          toolId !== BLOCK.IRON_PICKAXE
+        ) {
           shouldDrop = false;
         }
       }

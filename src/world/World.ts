@@ -78,6 +78,10 @@ export class World {
     this.chunkManager.update(playerPos);
   }
 
+  public updateChunkVisibility(camera: THREE.Camera) {
+    this.chunkManager.updateVisibility(camera);
+  }
+
   public async loadChunk(cx: number, cz: number) {
     await this.chunkManager.loadChunk(cx, cz);
   }
@@ -105,6 +109,10 @@ export class World {
 
   public getTopY(worldX: number, worldZ: number): number {
     return this.chunkManager.getTopY(worldX, worldZ);
+  }
+
+  public getChunkCount(): { visible: number; total: number } {
+    return this.chunkManager.getChunkCount();
   }
 
   // Block breaking times

@@ -19,6 +19,7 @@ export class Menus {
   private btnContinue: HTMLButtonElement;
   private btnResume: HTMLElement;
   private btnExit: HTMLElement;
+  private resumeTimeout: number | null = null;
   private btnSettingsMain: HTMLElement;
   private btnSettingsPause: HTMLElement;
   private btnBackSettings: HTMLElement;
@@ -156,17 +157,23 @@ export class Menus {
 
     // PC-specific Cooldown to match browser Pointer Lock security delay (~1.3s)
     if (!this.game.renderer.getIsMobile()) {
+      // Очистить предыдущий таймаут если есть
+      if (this.resumeTimeout !== null) {
+        clearTimeout(this.resumeTimeout);
+      }
+
       this.btnResume.style.pointerEvents = "none";
       this.btnResume.style.opacity = "0.5";
       this.btnResume.innerText = "Ждите...";
 
-      setTimeout(() => {
-        // Only restore if we are still in the menu (though harmless if not)
+      this.resumeTimeout = window.setTimeout(() => {
+        // Only restore if we are still in the menu
         if (this.pauseMenu.style.display === "flex") {
           this.btnResume.style.pointerEvents = "auto";
           this.btnResume.style.opacity = "1";
           this.btnResume.innerText = "Продолжить";
         }
+        this.resumeTimeout = null;
       }, 1300);
     }
   }
@@ -176,6 +183,18 @@ export class Menus {
     this.pauseMenu.style.display = "none";
     this.settingsMenu.style.display = "none";
     this.crosshair.style.display = "block";
+
+    // Очистить таймаут и восстановить кнопку
+    if (this.resumeTimeout !== null) {
+      clearTimeout(this.resumeTimeout);
+      this.resumeTimeout = null;
+    }
+
+    if (!this.game.renderer.getIsMobile()) {
+      this.btnResume.style.pointerEvents = "auto";
+      this.btnResume.style.opacity = "1";
+      this.btnResume.innerText = "Продолжить";
+    }
 
     this.game.resetTime();
   }

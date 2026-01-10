@@ -1,4 +1,3 @@
-import * as THREE from "three";
 import { Renderer } from "./Renderer";
 import { GameState } from "./GameState";
 import { World } from "../world/World";
@@ -20,6 +19,7 @@ import { CLI } from "../ui/CLI";
 import { Menus } from "../ui/Menus";
 import { BLOCK } from "../constants/Blocks";
 import { TOOL_DURABILITY } from "../constants/GameConstants";
+import { createDevTools, DevTools } from "../utils/DevTools";
 
 /**
  * Главный класс игры, координирующий все системы
@@ -44,6 +44,7 @@ export class Game {
   public mobileControls: MobileControls | null = null;
   public cli: CLI;
   public menus: Menus;
+  public devTools: DevTools | null = null;
 
   public isAttackPressed: boolean = false;
   public isUsePressed: boolean = false;
@@ -99,6 +100,9 @@ export class Game {
     if (this.renderer.getIsMobile()) {
       this.mobileControls = new MobileControls(this);
     }
+
+    // Initialize Dev Tools (only in dev mode)
+    this.devTools = createDevTools();
   }
 
   /**
@@ -205,6 +209,7 @@ export class Game {
 
     // World & Environment
     this.world.update(this.renderer.controls.object.position);
+    this.world.updateChunkVisibility(this.renderer.camera); // Sodium-style culling
     this.environment.update(delta, this.renderer.controls.object.position);
     FurnaceManager.getInstance().tick(delta);
     if (this.furnaceUI.isVisible()) {
@@ -235,18 +240,24 @@ export class Game {
     // Entities
     for (let i = this.entities.length - 1; i >= 0; i--) {
       const entity = this.entities[i];
-      entity.update(time / 1000, delta);
+      
+      // Entity culling: скрыть дальние предметы
+      const distance = entity.mesh.position.distanceTo(
+        this.renderer.controls.object.position,
+      );
+      entity.mesh.visible = distance < 40; // 40 блоков видимости
+
+      // Обновлять физику только для видимых
+      if (entity.mesh.visible) {
+        entity.update(time / 1000, delta);
+      }
 
       if (entity.isDead) {
         this.entities.splice(i, 1);
         continue;
       }
 
-      if (
-        entity.mesh.position.distanceTo(
-          this.renderer.controls.object.position,
-        ) < 2.5
-      ) {
+      if (distance < 2.5) {
         // Pickup logic
         const remaining = this.inventory.addItem(entity.type, entity.count);
         entity.count = remaining;
@@ -280,5 +291,15 @@ export class Game {
 
   private render(): void {
     this.renderer.render();
+
+    // Update dev tools (only in dev mode)
+    if (this.devTools && this.gameState.getGameStarted()) {
+      const chunkStats = this.world.getChunkCount();
+      this.devTools.update(
+        this.renderer.renderer,
+        chunkStats.visible,
+        chunkStats.total,
+      );
+    }
   }
 }

@@ -89,10 +89,16 @@ export class MobManager {
         continue;
       }
 
-      mob.update(delta, player, onPlayerHit, isDay);
+      // Mob culling: скрыть дальних мобов
+      const dist = mob.mesh.position.distanceTo(playerPos);
+      mob.mesh.visible = dist < 60; // 60 блоков видимости
+
+      // AI обновляется только для близких мобов
+      if (dist < 40) {
+        mob.update(delta, player, onPlayerHit, isDay);
+      }
 
       // Despawn if too far (> 80 blocks)
-      const dist = mob.mesh.position.distanceTo(playerPos);
       if (dist > 80) {
         this.despawnMob(i);
       }

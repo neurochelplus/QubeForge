@@ -21,3 +21,16 @@ export const TOOL_DURABILITY = {
   IRON: 250,
 };
 
+// Item Entity Constants
+export const ITEM_ENTITY = {
+  SIZE_BLOCK: 0.3,
+  SIZE_FLAT: 0.5,
+  COLLISION_OFFSET: 0.15, // Half of SIZE_BLOCK
+  MAX_AGE: 180000, // 3 minutes
+  BLINK_START: 10000, // Start blinking 10 seconds before death
+  BLINK_INTERVAL: 250, // Blink every 250ms
+  FLOAT_AMPLITUDE: 0.05,
+  FLOAT_SPEED: 3,
+  ROTATION_SPEED: 2,
+};
+

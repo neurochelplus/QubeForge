@@ -97,7 +97,7 @@ export class BlockInteraction {
     return this.isEating;
   }
 
-  private consumeFood(id: number) {
+  private consumeFood(_id: number) {
     if (this.onConsumeItem) {
         // We need to know how much HP to restore
         // For now, let's just trigger the generic consume callback which removes item

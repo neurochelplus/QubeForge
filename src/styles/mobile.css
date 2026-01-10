@@ -1,0 +1,142 @@
+/* Mobile UI Container */
+#mobile-ui {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 50;
+}
+
+.is-mobile #mobile-ui {
+    display: block;
+}
+
+.is-mobile #blocker,
+.is-mobile #instructions {
+    display: none !important;
+}
+
+/* Joystick */
+#joystick-zone {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    width: 150px;
+    height: 150px;
+    pointer-events: auto;
+}
+
+#joystick-base {
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    position: relative;
+}
+
+#joystick-stick {
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+/* Mobile Action Buttons */
+#mobile-actions {
+    position: absolute;
+    bottom: 40px;
+    right: 20px;
+    display: flex;
+    gap: 15px;
+    pointer-events: auto;
+}
+
+.mob-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    user-select: none;
+}
+
+.mob-btn:active {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+#btn-inv {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    font-size: 12px;
+    pointer-events: auto;
+}
+
+#btn-menu {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 40px;
+    height: 40px;
+    font-size: 12px;
+    pointer-events: auto;
+}
+
+#btn-run {
+    position: absolute;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    color: white;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    user-select: none;
+    pointer-events: auto;
+    z-index: 55;
+}
+
+/* Mobile Inventory Adjustments */
+.is-mobile #inventory-menu {
+    left: 35%;
+    transform: translate(-50%, -50%);
+    width: 60%;
+    max-width: 350px;
+}
+
+.is-mobile #btn-close-inv {
+    display: flex;
+}
+
+.is-mobile .slot {
+    width: 30px;
+    height: 30px;
+    font-size: 10px;
+}
+
+.is-mobile .block-icon {
+    width: 20px;
+    height: 20px;
+}

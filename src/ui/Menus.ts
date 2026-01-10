@@ -158,7 +158,6 @@ export class Menus {
     if (!this.game.renderer.getIsMobile()) {
       this.btnResume.style.pointerEvents = "none";
       this.btnResume.style.opacity = "0.5";
-      const originalText = this.btnResume.innerText;
       this.btnResume.innerText = "Ждите...";
 
       setTimeout(() => {

@@ -1,0 +1,67 @@
+/* Inventory Menu */
+#inventory-menu {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 20px;
+    border-radius: 8px;
+    color: white;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#btn-close-inv {
+    display: none;
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 30px;
+    height: 30px;
+    background: #cc3333;
+    color: white;
+    border: 2px solid #fff;
+    border-radius: 4px;
+    font-weight: bold;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    z-index: 26;
+}
+
+#inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 4px;
+    margin-top: 10px;
+}
+
+.slot-hotbar-separator {
+    margin-top: 15px;
+}
+
+/* Drag & Drop */
+#drag-icon {
+    position: fixed;
+    pointer-events: none;
+    z-index: 100;
+    display: none;
+}
+
+/* Tooltip */
+#tooltip {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-size: 14px;
+    pointer-events: none;
+    z-index: 30;
+    display: none;
+    border: 1px solid #555;
+    white-space: nowrap;
+}

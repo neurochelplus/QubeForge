@@ -25,6 +25,7 @@ import { TOOL_DURABILITY } from "../constants/GameConstants";
  * Главный класс игры, координирующий все системы
  */
 export class Game {
+  [x: string]: any;
   public renderer: Renderer;
   public gameState: GameState;
   public world: World;

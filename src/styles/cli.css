@@ -1,0 +1,24 @@
+/* CLI Console */
+#cli-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 40px;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: none;
+    z-index: 100;
+    align-items: center;
+    padding: 0 10px;
+    box-sizing: border-box;
+}
+
+#cli-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: white;
+    font-family: monospace;
+    font-size: 16px;
+    outline: none;
+}

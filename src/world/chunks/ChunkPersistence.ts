@@ -1,4 +1,4 @@
-import { worldDB } from "../utils/DB";
+import { worldDB } from "../../utils/DB";
 
 export class ChunkPersistence {
   private knownChunkKeys: Set<string> = new Set();

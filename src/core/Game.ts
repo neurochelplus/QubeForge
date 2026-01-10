@@ -20,6 +20,7 @@ import { Menus } from "../ui/Menus";
 import { BLOCK } from "../constants/Blocks";
 import { TOOL_DURABILITY } from "../constants/GameConstants";
 import { createDevTools, DevTools } from "../utils/DevTools";
+import { createProfiler, PerformanceProfiler } from "../utils/PerformanceProfiler";
 
 /**
  * Главный класс игры, координирующий все системы
@@ -45,6 +46,7 @@ export class Game {
   public cli: CLI;
   public menus: Menus;
   public devTools: DevTools | null = null;
+  public profiler: PerformanceProfiler | null = null;
 
   public isAttackPressed: boolean = false;
   public isUsePressed: boolean = false;
@@ -103,6 +105,7 @@ export class Game {
 
     // Initialize Dev Tools (only in dev mode)
     this.devTools = createDevTools();
+    this.profiler = createProfiler();
   }
 
   /**
@@ -207,22 +210,33 @@ export class Game {
     const time = performance.now();
     const delta = (time - this.prevTime) / 1000;
 
+    // Профилирование: начало кадра
+    this.profiler?.startMeasure('total-frame');
+
     // World & Environment
+    this.profiler?.startMeasure('world-update');
     this.world.update(this.renderer.controls.object.position);
     this.world.updateChunkVisibility(this.renderer.camera); // Sodium-style culling
+    this.profiler?.endMeasure('world-update');
+
+    this.profiler?.startMeasure('environment-update');
     this.environment.update(delta, this.renderer.controls.object.position);
+    this.profiler?.endMeasure('environment-update');
+
     FurnaceManager.getInstance().tick(delta);
     if (this.furnaceUI.isVisible()) {
       this.furnaceUI.updateVisuals();
     }
 
     // Player Update (Physics & Hand)
-
-    // Player Update (Physics & Hand)
+    this.profiler?.startMeasure('player-update');
     this.player.update(delta);
+    this.profiler?.endMeasure('player-update');
 
     // Block Breaking
+    this.profiler?.startMeasure('block-breaking');
     this.blockBreaking.update(time, this.world);
+    this.profiler?.endMeasure('block-breaking');
 
     // Attack / Mining
     if (this.isAttackPressed && this.gameState.getGameStarted()) {
@@ -238,6 +252,7 @@ export class Game {
     }
 
     // Entities
+    this.profiler?.startMeasure('entities-update');
     for (let i = this.entities.length - 1; i >= 0; i--) {
       const entity = this.entities[i];
       
@@ -272,34 +287,46 @@ export class Game {
           this.inventoryUI.onInventoryChange();
       }
     }
+    this.profiler?.endMeasure('entities-update');
 
     // Mobs
+    this.profiler?.startMeasure('mobs-update');
     this.mobManager.update(
       delta,
       this.player, // Pass full player object
       this.environment,
       (amt) => this.player.health.takeDamage(amt),
     );
+    this.profiler?.endMeasure('mobs-update');
 
     // Cursor
     if (this.gameState.getGameStarted()) {
       this.blockCursor.update(this.world);
     }
 
+    this.profiler?.endMeasure('total-frame');
     this.prevTime = time;
   }
 
   private render(): void {
+    // Профилирование рендера
+    this.profiler?.startMeasure('render');
     this.renderer.render();
+    this.profiler?.endMeasure('render');
 
     // Update dev tools (only in dev mode)
     if (this.devTools && this.gameState.getGameStarted()) {
+      this.profiler?.startMeasure('devtools-update');
       const chunkStats = this.world.getChunkCount();
       this.devTools.update(
         this.renderer.renderer,
         chunkStats.visible,
         chunkStats.total,
       );
+      this.profiler?.endMeasure('devtools-update');
     }
+
+    // Обновить статистику кадра
+    this.profiler?.updateFrame();
   }
 }

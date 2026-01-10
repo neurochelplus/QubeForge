@@ -1,8 +1,8 @@
 import * as THREE from "three";
-import { BLOCK } from "../constants/Blocks";
-import { TextureAtlas } from "./TextureAtlas";
-import { FurnaceManager } from "../crafting/FurnaceManager";
-import { BlockColors } from "../constants/BlockColors";
+import { BLOCK } from "../../constants/Blocks";
+import { TextureAtlas } from "../generation/TextureAtlas";
+import { FurnaceManager } from "../../crafting/FurnaceManager";
+import { BlockColors } from "../../constants/BlockColors";
 
 export class ChunkMeshBuilder {
   private noiseTexture: THREE.DataTexture;
@@ -21,7 +21,7 @@ export class ChunkMeshBuilder {
     cz: number,
     chunkSize: number,
     chunkHeight: number,
-    getBlockIndex: (x: number, y: number, z: number) => number,
+    _getBlockIndex: (x: number, y: number, z: number) => number,
     getNeighborBlock: (x: number, y: number, z: number) => number,
   ): THREE.Mesh {
     const positions: number[] = [];
@@ -32,31 +32,66 @@ export class ChunkMeshBuilder {
     const startX = cx * chunkSize;
     const startZ = cz * chunkSize;
 
-    for (let x = 0; x < chunkSize; x++) {
-      for (let y = 0; y < chunkHeight; y++) {
+    // Предвычислить границы Y с блоками (пропустить пустые слои)
+    let minY = chunkHeight;
+    let maxY = 0;
+    
+    for (let y = 0; y < chunkHeight; y++) {
+      let hasBlocks = false;
+      for (let x = 0; x < chunkSize && !hasBlocks; x++) {
+        for (let z = 0; z < chunkSize && !hasBlocks; z++) {
+          const index = x + y * chunkSize + z * chunkSize * chunkHeight;
+          if (data[index] !== BLOCK.AIR) {
+            hasBlocks = true;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+          }
+        }
+      }
+    }
+
+    // Если чанк пустой
+    if (minY > maxY) {
+      return this.createMesh(positions, normals, uvs, colors, startX, startZ);
+    }
+
+    // Расширить границы на 1 для корректной проверки соседей
+    minY = Math.max(0, minY - 1);
+    maxY = Math.min(chunkHeight - 1, maxY + 1);
+
+    // Кэшированные значения для быстрого доступа
+    const chunkSizeHeight = chunkSize * chunkHeight;
+
+    for (let y = minY; y <= maxY; y++) {
+      const yOffset = y * chunkSize;
+      
+      for (let x = 0; x < chunkSize; x++) {
         for (let z = 0; z < chunkSize; z++) {
-          const index = getBlockIndex(x, y, z);
+          const index = x + yOffset + z * chunkSizeHeight;
           const type = data[index];
 
           if (type === BLOCK.AIR) continue;
 
+          const worldX = startX + x;
+          const worldZ = startZ + z;
+
           // Check neighbors and add faces
-          if (this.isTransparent(getNeighborBlock(startX + x, y + 1, startZ + z))) {
+          if (this.isTransparent(getNeighborBlock(worldX, y + 1, worldZ))) {
             this.addFace(positions, normals, uvs, colors, x, y, z, type, "top", startX, startZ);
           }
-          if (this.isTransparent(getNeighborBlock(startX + x, y - 1, startZ + z))) {
+          if (this.isTransparent(getNeighborBlock(worldX, y - 1, worldZ))) {
             this.addFace(positions, normals, uvs, colors, x, y, z, type, "bottom", startX, startZ);
           }
-          if (this.isTransparent(getNeighborBlock(startX + x, y, startZ + z + 1))) {
+          if (this.isTransparent(getNeighborBlock(worldX, y, worldZ + 1))) {
             this.addFace(positions, normals, uvs, colors, x, y, z, type, "front", startX, startZ);
           }
-          if (this.isTransparent(getNeighborBlock(startX + x, y, startZ + z - 1))) {
+          if (this.isTransparent(getNeighborBlock(worldX, y, worldZ - 1))) {
             this.addFace(positions, normals, uvs, colors, x, y, z, type, "back", startX, startZ);
           }
-          if (this.isTransparent(getNeighborBlock(startX + x + 1, y, startZ + z))) {
+          if (this.isTransparent(getNeighborBlock(worldX + 1, y, worldZ))) {
             this.addFace(positions, normals, uvs, colors, x, y, z, type, "right", startX, startZ);
           }
-          if (this.isTransparent(getNeighborBlock(startX + x - 1, y, startZ + z))) {
+          if (this.isTransparent(getNeighborBlock(worldX - 1, y, worldZ))) {
             this.addFace(positions, normals, uvs, colors, x, y, z, type, "left", startX, startZ);
           }
         }

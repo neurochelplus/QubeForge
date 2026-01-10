@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { BLOCK_DEFS, hexToRgb } from "../constants/BlockTextures";
+import { BLOCK_DEFS, hexToRgb } from "../../constants/BlockTextures";
 
 export class TextureAtlas {
   private static readonly ATLAS_WIDTH = 192; // 12 slots * 16px

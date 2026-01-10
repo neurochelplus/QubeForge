@@ -1,5 +1,5 @@
 import { createNoise2D } from "simplex-noise";
-import { BLOCK } from "../constants/Blocks";
+import { BLOCK } from "../../constants/Blocks";
 
 export class TerrainGenerator {
   private noise2D: (x: number, y: number) => number;

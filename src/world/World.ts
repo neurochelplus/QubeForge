@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { worldDB } from "../utils/DB";
 import { BLOCK } from "../constants/Blocks";
-import { ChunkManager } from "./ChunkManager";
+import { ChunkManager } from "./chunks/ChunkManager";
 
 export class World {
   private chunkManager: ChunkManager;

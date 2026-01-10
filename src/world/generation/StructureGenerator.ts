@@ -1,8 +1,12 @@
-import { BLOCK } from "../constants/Blocks";
-import { TerrainGenerator } from "./TerrainGenerator";
+import { BLOCK } from "../../constants/Blocks";
+import type { TerrainGenerator } from "./TerrainGenerator";
 
 export class StructureGenerator {
-  constructor(private terrainGen: TerrainGenerator) {}
+  private terrainGen: TerrainGenerator;
+  
+  constructor(terrainGen: TerrainGenerator) {
+    this.terrainGen = terrainGen;
+  }
 
   public generateTrees(
     data: Uint8Array,
@@ -25,7 +29,7 @@ export class StructureGenerator {
 
   private findSurfaceHeight(
     data: Uint8Array,
-    chunkSize: number,
+    _chunkSize: number,
     chunkHeight: number,
     x: number,
     z: number,

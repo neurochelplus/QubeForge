@@ -2,6 +2,16 @@ import * as THREE from "three";
 import { ChunkLoader } from "./ChunkLoader";
 import { ChunkVisibility } from "./ChunkVisibility";
 
+// Глобальный доступ к профайлеру (если есть)
+declare global {
+  interface Window {
+    __profiler?: {
+      startMeasure(label: string): void;
+      endMeasure(label: string): void;
+    };
+  }
+}
+
 /**
  * Фасад для управления чанками
  * Координирует загрузку, выгрузку и видимость чанков
@@ -38,6 +48,8 @@ export class ChunkManager {
    * Обновить чанки вокруг игрока
    */
   public update(playerPos: THREE.Vector3): void {
+    const profiler = window.__profiler;
+    
     const isMobile =
       /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
         navigator.userAgent,
@@ -50,28 +62,41 @@ export class ChunkManager {
 
     const activeChunks = new Set<string>();
 
-    // Загрузить чанки в радиусе
+    // Загрузить чанки в радиусе (с приоритетом по расстоянию)
+    profiler?.startMeasure('chunk-queue');
     for (let x = cx - radius; x <= cx + radius; x++) {
       for (let z = cz - radius; z <= cz + radius; z++) {
         const key = `${x},${z}`;
         activeChunks.add(key);
 
         if (!this.loader.getChunks().has(key)) {
-          this.loader.ensureChunk(x, z);
+          // Приоритет = расстояние от игрока (ближние первыми)
+          const priority = Math.abs(x - cx) + Math.abs(z - cz);
+          this.loader.ensureChunk(x, z, priority);
         }
       }
     }
+    profiler?.endMeasure('chunk-queue');
+
+    // Обработать очередь генерации (1 чанк за кадр)
+    profiler?.startMeasure('chunk-generation');
+    this.loader.processGenerationQueue();
+    profiler?.endMeasure('chunk-generation');
 
     // Выгрузить дальние чанки
+    profiler?.startMeasure('chunk-unload');
     for (const [key] of this.loader.getChunks()) {
       if (!activeChunks.has(key)) {
         this.loader.unloadChunk(key);
         this.visibility.clearBounds(key);
       }
     }
+    profiler?.endMeasure('chunk-unload');
 
     // Обновить сортировку чанков для early-z optimization
+    profiler?.startMeasure('chunk-sorting');
     this.loader.updateChunkSorting(playerPos);
+    profiler?.endMeasure('chunk-sorting');
 
     // Memory cleanup
     if (Math.random() < (isMobile ? 0.05 : 0.01)) {

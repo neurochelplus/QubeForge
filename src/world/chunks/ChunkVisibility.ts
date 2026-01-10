@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { ChunkCulling } from "./ChunkCulling";
-import type { ChunkData } from "./ChunkLoader";
+import type { ChunkMesh } from "./ChunkMeshManager";
 
 /**
  * Управление видимостью чанков (frustum culling)
@@ -25,7 +25,7 @@ export class ChunkVisibility {
   /**
    * Обновить видимость чанков (Sodium-style frustum culling)
    */
-  public update(camera: THREE.Camera, chunks: Map<string, ChunkData>): void {
+  public update(camera: THREE.Camera, chunks: Map<string, ChunkMesh>): void {
     // Проверить, изменилась ли ротация или позиция камеры
     const currentRotation = camera.rotation;
     const currentPosition = camera.position;

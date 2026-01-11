@@ -1,5 +1,6 @@
 import { Game } from "../core/Game";
 import { worldDB } from "../utils/DB";
+import { modManagerUI } from "../modding";
 
 export class Menus {
   private game: Game;
@@ -17,8 +18,10 @@ export class Menus {
   // Buttons
   private btnNewGame: HTMLElement;
   private btnContinue: HTMLButtonElement;
+  private btnMods: HTMLElement;
   private btnResume: HTMLElement;
   private btnExit: HTMLElement;
+  private resumeTimeout: number | null = null;
   private btnSettingsMain: HTMLElement;
   private btnSettingsPause: HTMLElement;
   private btnBackSettings: HTMLElement;
@@ -58,6 +61,7 @@ export class Menus {
     this.btnContinue = document.getElementById(
       "btn-continue",
     )! as HTMLButtonElement;
+    this.btnMods = document.getElementById("btn-mods")!;
     this.btnResume = document.getElementById("btn-resume")!;
     this.btnExit = document.getElementById("btn-exit")!;
     this.btnSettingsMain = document.getElementById("btn-settings-main")!;
@@ -89,6 +93,7 @@ export class Menus {
 
     this.btnNewGame.addEventListener("click", () => this.startGame(false));
     this.btnContinue.addEventListener("click", () => this.startGame(true));
+    this.btnMods.addEventListener("click", () => this.showModManager());
     this.btnResume.addEventListener("click", () => {
       if (this.game.renderer.getIsMobile()) {
         this.hidePauseMenu();
@@ -156,18 +161,23 @@ export class Menus {
 
     // PC-specific Cooldown to match browser Pointer Lock security delay (~1.3s)
     if (!this.game.renderer.getIsMobile()) {
+      // Очистить предыдущий таймаут если есть
+      if (this.resumeTimeout !== null) {
+        clearTimeout(this.resumeTimeout);
+      }
+
       this.btnResume.style.pointerEvents = "none";
       this.btnResume.style.opacity = "0.5";
-      const originalText = this.btnResume.innerText;
       this.btnResume.innerText = "Ждите...";
 
-      setTimeout(() => {
-        // Only restore if we are still in the menu (though harmless if not)
+      this.resumeTimeout = window.setTimeout(() => {
+        // Only restore if we are still in the menu
         if (this.pauseMenu.style.display === "flex") {
           this.btnResume.style.pointerEvents = "auto";
           this.btnResume.style.opacity = "1";
           this.btnResume.innerText = "Продолжить";
         }
+        this.resumeTimeout = null;
       }, 1300);
     }
   }
@@ -177,6 +187,18 @@ export class Menus {
     this.pauseMenu.style.display = "none";
     this.settingsMenu.style.display = "none";
     this.crosshair.style.display = "block";
+
+    // Очистить таймаут и восстановить кнопку
+    if (this.resumeTimeout !== null) {
+      clearTimeout(this.resumeTimeout);
+      this.resumeTimeout = null;
+    }
+
+    if (!this.game.renderer.getIsMobile()) {
+      this.btnResume.style.pointerEvents = "auto";
+      this.btnResume.style.opacity = "1";
+      this.btnResume.innerText = "Продолжить";
+    }
 
     this.game.resetTime();
   }
@@ -210,6 +232,10 @@ export class Menus {
     } else {
       this.showMainMenu();
     }
+  }
+
+  private showModManager() {
+    modManagerUI.show();
   }
 
   private async startGame(loadSave: boolean) {

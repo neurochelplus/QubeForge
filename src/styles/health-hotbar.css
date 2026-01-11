@@ -1,0 +1,140 @@
+/* UI Container */
+#ui-container {
+    position: absolute;
+    bottom: 10px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: none;
+    z-index: 5;
+}
+
+/* Health Bar */
+#health-bar {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 25px;
+}
+
+.hp-unit {
+    width: 10px;
+    height: 10px;
+    background-color: #ff3333;
+    border: 1px solid #500;
+    box-shadow: 1px 1px 0 #000;
+}
+
+.hp-unit.empty {
+    background-color: #333;
+    border: 1px solid #111;
+}
+
+/* Hotbar Label */
+#hotbar-label {
+    margin-bottom: 5px;
+    color: white;
+    font-size: 16px;
+    text-shadow: 1px 1px 2px black;
+    opacity: 0;
+    transition: opacity 0.5s;
+    height: 20px;
+}
+
+/* Hotbar */
+#hotbar {
+    display: flex;
+    gap: 4px;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 4px;
+    border-radius: 4px;
+    pointer-events: auto;
+}
+
+/* Slots */
+.slot {
+    width: 40px;
+    height: 40px;
+    border: 2px solid #555;
+    background-color: rgba(0, 0, 0, 0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-family: monospace;
+    font-size: 14px;
+    position: relative;
+    cursor: pointer;
+}
+
+.slot:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.slot.active {
+    border-color: white;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.slot-count {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    font-size: 10px;
+    text-shadow: 1px 1px 0 #000;
+    pointer-events: none;
+}
+
+.slot-durability {
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    width: 36px;
+    height: 2px;
+    background-color: #00ff00;
+    pointer-events: none;
+    z-index: 5;
+}
+
+/* Block Icons */
+.block-icon {
+    width: 24px;
+    height: 24px;
+    background-size: cover;
+    image-rendering: pixelated;
+    background-image: var(--noise-url);
+    background-blend-mode: overlay;
+    box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+}
+
+.block-icon.item-stick {
+    background-image: linear-gradient(
+        45deg,
+        transparent 40%,
+        #654321 40%,
+        #654321 60%,
+        transparent 60%
+    );
+    background-blend-mode: normal;
+    box-shadow: none;
+}
+
+.block-icon.item-planks {
+    background-image:
+        var(--noise-url),
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 20%,
+            rgba(0, 0, 0, 0.3) 20%,
+            rgba(0, 0, 0, 0.3) 25%
+        );
+    background-blend-mode: overlay, normal;
+}
+
+.block-icon.item-tool {
+    background-color: transparent !important;
+    background-blend-mode: normal;
+    box-shadow: none;
+}

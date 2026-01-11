@@ -1,8 +1,6 @@
 import * as THREE from "three";
 import { Mob, MobState } from "./Mob";
 import { World } from "../world/World";
-import { Player } from "../player/Player";
-import { ItemEntity } from "../entities/ItemEntity";
 
 export class WildBoar extends Mob {
   protected readonly walkSpeed: number = 1.5;

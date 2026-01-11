@@ -1,16 +1,11 @@
 import { FurnaceManager } from "./FurnaceManager";
-import { Inventory } from "../inventory/Inventory";
-import { InventoryUI } from "../inventory/InventoryUI";
 import { DragDrop } from "../inventory/DragDrop";
 import { TOOL_TEXTURES } from "../constants/ToolTextures";
 import { getBlockColor } from "../utils/BlockColors";
 
 export class FurnaceUI {
   private furnaceManager: FurnaceManager;
-  private inventory: Inventory;
-  private inventoryUI: InventoryUI;
   private dragDrop: DragDrop;
-  private isMobile: boolean;
 
   private container: HTMLElement;
   private inputSlot: HTMLElement;
@@ -24,16 +19,10 @@ export class FurnaceUI {
 
   constructor(
     furnaceManager: FurnaceManager,
-    inventory: Inventory,
-    inventoryUI: InventoryUI,
     dragDrop: DragDrop,
-    isMobile: boolean,
   ) {
     this.furnaceManager = furnaceManager;
-    this.inventory = inventory;
-    this.inventoryUI = inventoryUI;
     this.dragDrop = dragDrop;
-    this.isMobile = isMobile;
 
     // Create DOM elements
     this.container = document.createElement("div");

@@ -9,6 +9,7 @@ import {
   PLAYER_HEIGHT,
   PLAYER_EYE_HEIGHT,
 } from "../constants/GameConstants";
+import { globalEventBus } from "../modding";
 
 export class BlockInteraction {
   private raycaster: THREE.Raycaster;
@@ -97,7 +98,7 @@ export class BlockInteraction {
     return this.isEating;
   }
 
-  private consumeFood(id: number) {
+  private consumeFood(_id: number) {
     if (this.onConsumeItem) {
         // We need to know how much HP to restore
         // For now, let's just trigger the generic consume callback which removes item
@@ -281,7 +282,11 @@ export class BlockInteraction {
           if (this.onPlaceBlock) {
             const placed = this.onPlaceBlock(px, py, pz, slot.id);
             if (placed) {
-              // Block was placed, inventory will be updated by caller
+              // Emit event for mods
+              globalEventBus.emit('world:blockPlace', {
+                x: px, y: py, z: pz,
+                blockId: slot.id,
+              });
             }
           }
         }

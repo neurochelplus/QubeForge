@@ -1,4 +1,3 @@
-import * as THREE from "three";
 import { Renderer } from "./Renderer";
 import { GameState } from "./GameState";
 import { World } from "../world/World";
@@ -20,11 +19,15 @@ import { CLI } from "../ui/CLI";
 import { Menus } from "../ui/Menus";
 import { BLOCK } from "../constants/Blocks";
 import { TOOL_DURABILITY } from "../constants/GameConstants";
+import { createDevTools, DevTools } from "../utils/DevTools";
+import { createProfiler, PerformanceProfiler } from "../utils/PerformanceProfiler";
+import { modLoader, globalEventBus } from "../modding";
 
 /**
  * Главный класс игры, координирующий все системы
  */
 export class Game {
+  [x: string]: any;
   public renderer: Renderer;
   public gameState: GameState;
   public world: World;
@@ -43,6 +46,8 @@ export class Game {
   public mobileControls: MobileControls | null = null;
   public cli: CLI;
   public menus: Menus;
+  public devTools: DevTools | null = null;
+  public profiler: PerformanceProfiler | null = null;
 
   public isAttackPressed: boolean = false;
   public isUsePressed: boolean = false;
@@ -97,6 +102,28 @@ export class Game {
     // Initialize Mobile Controls if needed
     if (this.renderer.getIsMobile()) {
       this.mobileControls = new MobileControls(this);
+    }
+
+    // Initialize Dev Tools (only in dev mode)
+    this.devTools = createDevTools();
+    this.profiler = createProfiler();
+
+    // Initialize Modding System
+    this.initMods();
+  }
+
+  /**
+   * Инициализация системы модов
+   */
+  private async initMods(): Promise<void> {
+    try {
+      // Передать ссылку на игру в ModLoader
+      modLoader.setGame(this);
+      
+      // Загрузить все моды
+      await modLoader.loadAllMods();
+    } catch (error) {
+      console.error('[Game] Failed to initialize mods:', error);
     }
   }
 
@@ -202,21 +229,33 @@ export class Game {
     const time = performance.now();
     const delta = (time - this.prevTime) / 1000;
 
+    // Профилирование: начало кадра
+    this.profiler?.startMeasure('total-frame');
+
     // World & Environment
+    this.profiler?.startMeasure('world-update');
     this.world.update(this.renderer.controls.object.position);
+    this.world.updateChunkVisibility(this.renderer.camera); // Sodium-style culling
+    this.profiler?.endMeasure('world-update');
+
+    this.profiler?.startMeasure('environment-update');
     this.environment.update(delta, this.renderer.controls.object.position);
+    this.profiler?.endMeasure('environment-update');
+
     FurnaceManager.getInstance().tick(delta);
     if (this.furnaceUI.isVisible()) {
       this.furnaceUI.updateVisuals();
     }
 
     // Player Update (Physics & Hand)
-
-    // Player Update (Physics & Hand)
+    this.profiler?.startMeasure('player-update');
     this.player.update(delta);
+    this.profiler?.endMeasure('player-update');
 
     // Block Breaking
+    this.profiler?.startMeasure('block-breaking');
     this.blockBreaking.update(time, this.world);
+    this.profiler?.endMeasure('block-breaking');
 
     // Attack / Mining
     if (this.isAttackPressed && this.gameState.getGameStarted()) {
@@ -232,20 +271,27 @@ export class Game {
     }
 
     // Entities
+    this.profiler?.startMeasure('entities-update');
     for (let i = this.entities.length - 1; i >= 0; i--) {
       const entity = this.entities[i];
-      entity.update(time / 1000, delta);
+      
+      // Entity culling: скрыть дальние предметы
+      const distance = entity.mesh.position.distanceTo(
+        this.renderer.controls.object.position,
+      );
+      entity.mesh.visible = distance < 40; // 40 блоков видимости
+
+      // Обновлять физику только для видимых
+      if (entity.mesh.visible) {
+        entity.update(time / 1000, delta);
+      }
 
       if (entity.isDead) {
         this.entities.splice(i, 1);
         continue;
       }
 
-      if (
-        entity.mesh.position.distanceTo(
-          this.renderer.controls.object.position,
-        ) < 2.5
-      ) {
+      if (distance < 2.5) {
         // Pickup logic
         const remaining = this.inventory.addItem(entity.type, entity.count);
         entity.count = remaining;
@@ -260,24 +306,46 @@ export class Game {
           this.inventoryUI.onInventoryChange();
       }
     }
+    this.profiler?.endMeasure('entities-update');
 
     // Mobs
+    this.profiler?.startMeasure('mobs-update');
     this.mobManager.update(
       delta,
       this.player, // Pass full player object
       this.environment,
       (amt) => this.player.health.takeDamage(amt),
     );
+    this.profiler?.endMeasure('mobs-update');
 
     // Cursor
     if (this.gameState.getGameStarted()) {
       this.blockCursor.update(this.world);
     }
 
+    this.profiler?.endMeasure('total-frame');
     this.prevTime = time;
   }
 
   private render(): void {
+    // Профилирование рендера
+    this.profiler?.startMeasure('render');
     this.renderer.render();
+    this.profiler?.endMeasure('render');
+
+    // Update dev tools (only in dev mode)
+    if (this.devTools && this.gameState.getGameStarted()) {
+      this.profiler?.startMeasure('devtools-update');
+      const chunkStats = this.world.getChunkCount();
+      this.devTools.update(
+        this.renderer.renderer,
+        chunkStats.visible,
+        chunkStats.total,
+      );
+      this.profiler?.endMeasure('devtools-update');
+    }
+
+    // Обновить статистику кадра
+    this.profiler?.updateFrame();
   }
 }

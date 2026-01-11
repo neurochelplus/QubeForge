@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Mob, MobState } from "./Mob";
+import { Mob } from "./Mob";
 import { World } from "../world/World";
 import { Player } from "../player/Player";
 
@@ -303,8 +303,8 @@ export class ChunkErrorMob extends Mob {
   protected updateAI(
     delta: number,
     playerPos?: THREE.Vector3,
-    onAttack?: (damage: number) => void,
-    isDay?: boolean,
+    _onAttack?: (damage: number) => void,
+    _isDay?: boolean,
   ) {
     if (!playerPos) return;
 

@@ -30,11 +30,4 @@ yarn-error.log*
 # Системные файлы
 DS_Store
 thumbs.db
-.kiro/specs/furnace-implementation/tasks.md
-.gemini/GEMINI.md
-.kiro/specs/add-ores/design.md
-.kiro/specs/add-ores/requirements.md
-.kiro/specs/add-ores/tasks.md
-.gitignore
-.kiro/specs/furnace-implementation/requirements.md
-.kiro/specs/furnace-implementation/design.md
+.kiro/

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 import { HealthBar } from '../ui/HealthBar';
+import { globalEventBus } from '../modding';
 
 export class PlayerHealth {
   private hp: number = 20;
@@ -47,6 +48,13 @@ export class PlayerHealth {
     this.hp -= amount;
     if (this.hp < 0) this.hp = 0;
     this.healthBar.update(this.hp);
+
+    // Emit event for mods
+    globalEventBus.emit('player:damage', {
+      amount,
+      newHp: this.hp,
+      maxHp: this.maxHp,
+    });
 
     this.isInvulnerable = true;
 

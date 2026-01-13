@@ -11,7 +11,7 @@ export class BlockBreaking {
   private raycaster: THREE.Raycaster;
   private camera: PerspectiveCamera;
   private scene: Scene;
-  private controls: any;
+  private controls: PointerLockControls;
   private cursorMesh?: THREE.Mesh;
 
   private isBreaking: boolean = false;

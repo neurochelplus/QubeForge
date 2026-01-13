@@ -1,9 +1,10 @@
 // Компонент для отображения текста в hotbar label
+import { HOTBAR_LABEL_DURATION } from "../constants/GameConstants";
 
 export class HotbarLabel {
   private element: HTMLElement;
   private timeoutId: number | null = null;
-  private readonly DISPLAY_DURATION = 2000;
+  private readonly DISPLAY_DURATION = HOTBAR_LABEL_DURATION;
 
   constructor(element: HTMLElement) {
     this.element = element;

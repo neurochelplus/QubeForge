@@ -2,6 +2,8 @@ import * as THREE from "three";
 import { worldDB } from "../utils/DB";
 import { BLOCK } from "../constants/Blocks";
 import { ChunkManager } from "./chunks/ChunkManager";
+import { logger } from "../utils/Logger";
+import type { SerializedInventory } from "../types/Inventory";
 
 export class World {
   private chunkManager: ChunkManager;
@@ -17,7 +19,7 @@ export class World {
   // Persistence
   public async loadWorld(): Promise<{
     playerPosition?: THREE.Vector3;
-    inventory?: any;
+    inventory?: SerializedInventory;
   }> {
     await this.chunkManager.init();
 
@@ -25,9 +27,9 @@ export class World {
 
     if (meta?.seed !== undefined) {
       this.chunkManager.setSeed(meta.seed);
-      console.log(`Loaded seed: ${meta.seed}`);
+      logger.debug(`Loaded seed: ${meta.seed}`);
     } else {
-      console.log(`No seed found, using current: ${this.chunkManager.getSeed()}`);
+      logger.debug(`No seed found, using current: ${this.chunkManager.getSeed()}`);
     }
 
     return meta
@@ -44,9 +46,9 @@ export class World {
 
   public async saveWorld(playerData: {
     position: THREE.Vector3;
-    inventory: any;
+    inventory: SerializedInventory;
   }) {
-    console.log("Saving world...");
+    logger.info("Saving world...");
 
     await worldDB.set(
       "player",
@@ -63,14 +65,14 @@ export class World {
     );
 
     await this.chunkManager.saveDirtyChunks();
-    console.log("World saved.");
+    logger.info("World saved");
   }
 
   public async deleteWorld() {
-    console.log("Deleting world...");
+    logger.info("Deleting world...");
     await worldDB.init();
     await this.chunkManager.clear();
-    console.log("World deleted.");
+    logger.info("World deleted");
   }
 
   // Chunk operations

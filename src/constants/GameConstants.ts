@@ -34,3 +34,18 @@ export const ITEM_ENTITY = {
   ROTATION_SPEED: 2,
 };
 
+// Game Loop Constants
+export const PICKUP_DISTANCE = 2.5;
+export const ENTITY_VISIBILITY_DISTANCE = 40;
+
+// Player Health Constants
+export const INVULNERABILITY_DURATION = 500; // ms after taking damage
+
+// UI Constants
+export const HOTBAR_LABEL_DURATION = 2000; // ms
+export const AUTO_SAVE_INTERVAL = 30000; // 30 seconds
+
+// Chunk Constants
+export const CHUNK_SIZE = 32;
+export const CHUNK_HEIGHT = 256;
+

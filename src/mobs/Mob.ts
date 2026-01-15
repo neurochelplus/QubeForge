@@ -1,22 +1,14 @@
 import * as THREE from "three";
 import { World } from "../world/World";
 import { Player } from "../player/Player";
+import { MobState, type MobStateType } from "../types/Mobs";
 
-export const MobState = {
-  IDLE: 0,
-  WANDER: 1,
-  CHASE: 2,
-  ATTACK: 3,
-  SEEK_SHELTER: 4,
-  ALERT: 5,
-  FLEE: 6,
-} as const;
-
-export type MobState = (typeof MobState)[keyof typeof MobState];
+export { MobState };
+export type { MobStateType };
 
 export class Mob {
   public mesh: THREE.Group;
-  public state: MobState = MobState.IDLE;
+  public state: MobStateType = MobState.IDLE;
 
   // Physics
   protected velocity = new THREE.Vector3();

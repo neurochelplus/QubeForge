@@ -18,16 +18,22 @@ import { MobileControls } from "../mobile/MobileControls";
 import { CLI } from "../ui/CLI";
 import { Menus } from "../ui/Menus";
 import { BLOCK } from "../constants/Blocks";
-import { TOOL_DURABILITY } from "../constants/GameConstants";
+import { TOOL_DURABILITY, PICKUP_DISTANCE, ENTITY_VISIBILITY_DISTANCE } from "../constants/GameConstants";
 import { createDevTools, DevTools } from "../utils/DevTools";
 import { createProfiler, PerformanceProfiler } from "../utils/PerformanceProfiler";
-import { modLoader, globalEventBus } from "../modding";
+import { modLoader } from "../modding";
+import { AutoSave } from "../ui/AutoSave";
+import { KeyboardHandler } from "../input/KeyboardHandler";
+import { MouseHandler } from "../input/MouseHandler";
+import { PointerLockHandler } from "../input/PointerLockHandler";
+import { logger } from "../utils/Logger";
+
+
 
 /**
  * Главный класс игры, координирующий все системы
  */
 export class Game {
-  [x: string]: any;
   public renderer: Renderer;
   public gameState: GameState;
   public world: World;
@@ -51,6 +57,12 @@ export class Game {
 
   public isAttackPressed: boolean = false;
   public isUsePressed: boolean = false;
+  public autoSave?: AutoSave;
+  public inputHandlers?: {
+    keyboard: KeyboardHandler;
+    mouse: MouseHandler;
+    pointerLock: PointerLockHandler;
+  };
 
   private prevTime: number = performance.now();
   private animationId: number | null = null;
@@ -123,7 +135,7 @@ export class Game {
       // Загрузить все моды
       await modLoader.loadAllMods();
     } catch (error) {
-      console.error('[Game] Failed to initialize mods:', error);
+      logger.error('[Game] Failed to initialize mods:', error);
     }
   }
 
@@ -143,12 +155,24 @@ export class Game {
   }
 
   /**
-   * Остановка игрового цикла
+   * Остановка игрового цикла и очистка ресурсов
    */
   public stop(): void {
     if (this.animationId !== null) {
       cancelAnimationFrame(this.animationId);
       this.animationId = null;
+    }
+
+    // Cleanup input handlers
+    if (this.inputHandlers) {
+      this.inputHandlers.keyboard.cleanup();
+      this.inputHandlers.mouse.cleanup();
+      this.inputHandlers.pointerLock.cleanup();
+    }
+
+    // Stop auto-save
+    if (this.autoSave) {
+      this.autoSave.stop();
     }
   }
 
@@ -279,7 +303,7 @@ export class Game {
       const distance = entity.mesh.position.distanceTo(
         this.renderer.controls.object.position,
       );
-      entity.mesh.visible = distance < 40; // 40 блоков видимости
+      entity.mesh.visible = distance < ENTITY_VISIBILITY_DISTANCE; // 40 блоков видимости
 
       // Обновлять физику только для видимых
       if (entity.mesh.visible) {
@@ -291,7 +315,7 @@ export class Game {
         continue;
       }
 
-      if (distance < 2.5) {
+      if (distance < PICKUP_DISTANCE) {
         // Pickup logic
         const remaining = this.inventory.addItem(entity.type, entity.count);
         entity.count = remaining;

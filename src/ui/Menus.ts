@@ -137,6 +137,10 @@ export class Menus {
         position: this.game.renderer.controls.object.position,
         inventory: this.game.inventory.serialize(),
       });
+      
+      // Cleanup resources
+      this.game.stop();
+      
       this.showMainMenu();
     });
   }
@@ -186,6 +190,10 @@ export class Menus {
         position: this.game.renderer.controls.object.position,
         inventory: this.game.inventory.serialize(),
       });
+      
+      // Cleanup resources
+      this.game.stop();
+      
       this.showMainMenu();
     });
   }

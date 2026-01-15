@@ -14,34 +14,63 @@ export class MouseHandler {
   public isAttackPressed = false;
   public isUsePressed = false;
 
+  private gameState: GameState;
+  private player: Player;
+  private blockBreaking: BlockBreaking;
+  private blockInteraction: BlockInteraction;
+  private world: World;
+  private inventory: Inventory;
+  private inventoryUI: InventoryUI;
+  private controls: PointerLockControls;
+  private isMobile: boolean;
+  private onHotbarChange: () => void;
+
+  private mouseDownHandler = (e: MouseEvent) => this.onMouseDown(e);
+  private mouseUpHandler = () => this.onMouseUp();
+  private wheelHandler = (event: WheelEvent) => {
+    let selected = this.inventory.getSelectedSlot();
+    if (event.deltaY > 0) selected = (selected + 1) % 9;
+    else selected = (selected - 1 + 9) % 9;
+    this.inventory.setSelectedSlot(selected);
+    this.inventoryUI.refresh();
+    this.onHotbarChange();
+  };
+
   constructor(
-    private gameState: GameState,
-    private player: Player,
-    private blockBreaking: BlockBreaking,
-    private blockInteraction: BlockInteraction,
-    private world: World,
-    private inventory: Inventory,
-    private inventoryUI: InventoryUI,
-    private controls: PointerLockControls,
-    private isMobile: boolean,
-    private onHotbarChange: () => void,
+    gameState: GameState,
+    player: Player,
+    blockBreaking: BlockBreaking,
+    blockInteraction: BlockInteraction,
+    world: World,
+    inventory: Inventory,
+    inventoryUI: InventoryUI,
+    controls: PointerLockControls,
+    isMobile: boolean,
+    onHotbarChange: () => void,
   ) {
+    this.gameState = gameState;
+    this.player = player;
+    this.blockBreaking = blockBreaking;
+    this.blockInteraction = blockInteraction;
+    this.world = world;
+    this.inventory = inventory;
+    this.inventoryUI = inventoryUI;
+    this.controls = controls;
+    this.isMobile = isMobile;
+    this.onHotbarChange = onHotbarChange;
     this.init();
   }
 
   private init(): void {
-    document.addEventListener("mousedown", (e) => this.onMouseDown(e));
-    document.addEventListener("mouseup", () => this.onMouseUp());
+    document.addEventListener("mousedown", this.mouseDownHandler);
+    document.addEventListener("mouseup", this.mouseUpHandler);
+    window.addEventListener("wheel", this.wheelHandler);
+  }
 
-    // Hotbar scroll
-    window.addEventListener("wheel", (event) => {
-      let selected = this.inventory.getSelectedSlot();
-      if (event.deltaY > 0) selected = (selected + 1) % 9;
-      else selected = (selected - 1 + 9) % 9;
-      this.inventory.setSelectedSlot(selected);
-      this.inventoryUI.refresh();
-      this.onHotbarChange();
-    });
+  public cleanup(): void {
+    document.removeEventListener("mousedown", this.mouseDownHandler);
+    document.removeEventListener("mouseup", this.mouseUpHandler);
+    window.removeEventListener("wheel", this.wheelHandler);
   }
 
   private onMouseDown(event: MouseEvent): void {

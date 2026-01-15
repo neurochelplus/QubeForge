@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { ChunkLoader } from "./ChunkLoader";
 import { ChunkVisibility } from "./ChunkVisibility";
+import { logger } from "../../utils/Logger";
 
 // Глобальный доступ к профайлеру (если есть)
 declare global {
@@ -143,7 +144,7 @@ export class ChunkManager {
       chunksData.delete(key);
       this.loader.unloadChunk(key);
     }
-    console.log("Memory cleanup performed.");
+    logger.debug("Memory cleanup performed.");
   }
 
   // Делегирование методов к ChunkLoader

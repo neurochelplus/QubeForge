@@ -71,7 +71,7 @@ async function initializeGame() {
     inventoryController.toggle("furnace", { x, y, z });
 
   // Input Handlers
-  new KeyboardHandler(
+  const keyboardHandler = new KeyboardHandler(
     systems.gameState,
     systems.player,
     systems.inventory,
@@ -119,7 +119,7 @@ async function initializeGame() {
     },
   });
 
-  new PointerLockHandler(
+  const pointerLockHandler = new PointerLockHandler(
     systems.controls,
     systems.gameState,
     () => inventoryController.toggle(),
@@ -127,6 +127,13 @@ async function initializeGame() {
     () => game.menus.showPauseMenu(),
     () => game.cli.isOpen,
   );
+
+  // Store handlers in game for cleanup
+  game.inputHandlers = {
+    keyboard: keyboardHandler,
+    mouse: mouseHandler,
+    pointerLock: pointerLockHandler,
+  };
 
   // Auto-save
   const autoSave = new AutoSave(
@@ -136,6 +143,9 @@ async function initializeGame() {
     systems.inventory,
   );
   autoSave.start();
+
+  // Store autoSave in game for cleanup
+  game.autoSave = autoSave;
 
   // Mobile Events
   window.addEventListener("toggle-inventory", () => inventoryController.toggle(false));

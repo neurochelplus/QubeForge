@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 import { HealthBar } from '../ui/HealthBar';
 import { globalEventBus } from '../modding';
+import { INVULNERABILITY_DURATION } from '../constants/GameConstants';
+import { logger } from '../utils/Logger';
 
 export class PlayerHealth {
   private hp: number = 20;
@@ -88,7 +90,7 @@ export class PlayerHealth {
 
     setTimeout(() => {
       this.isInvulnerable = false;
-    }, 500);
+    }, INVULNERABILITY_DURATION);
   }
 
   public respawn(): void {
@@ -103,7 +105,7 @@ export class PlayerHealth {
       this.onRespawn();
     }
 
-    console.log("Respawned!");
+    logger.info("Player respawned");
   }
 
   public setHp(hp: number): void {

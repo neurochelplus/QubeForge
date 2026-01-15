@@ -1,6 +1,7 @@
 import { Game } from "../core/Game";
 import { BLOCK_NAMES, ITEM_MAP } from "../constants/BlockNames";
 import { FeatureToggles } from "../utils/FeatureToggles";
+import { logger } from "../utils/Logger";
 
 export class CLI {
   private game: Game;
@@ -102,7 +103,7 @@ export class CLI {
 
     if (command === "give") {
       if (args.length < 1) {
-        console.log("Usage: /give <item> [amount]");
+        logger.info("Usage: /give <item> [amount]");
         // We need HotbarLabel access. It's not in Game yet?
         // Wait, HotbarLabel is in main.ts but not in Game class explicitly?
         // Let's check Game.ts. It's NOT in Game.ts.
@@ -135,18 +136,16 @@ export class CLI {
 
         if (remaining > 0) {
           if (remaining === amount) {
-            console.log("Error: Inventory full. Could not add items.");
+            logger.error("Error: Inventory full. Could not add items.");
           } else {
-            console.log(
-              `Warning: Inventory almost full. Added ${amount - remaining} of ${amount} items.`,
-            );
+            logger.warn(`Warning: Inventory almost full. Added ${amount - remaining} of ${amount} items.`);
           }
         } else {
-          console.log(`Gave ${amount} ${itemName}`);
+          logger.info(`Gave ${amount} ${itemName}`);
         }
       } else {
         // this.game.hotbarLabel.show(...)
-        console.log(`Unknown item: ${itemName}`);
+        logger.error(`Unknown item: ${itemName}`);
       }
     }
   }

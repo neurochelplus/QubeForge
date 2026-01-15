@@ -14,7 +14,8 @@
 /* Menu Base */
 #main-menu,
 #pause-menu,
-#settings-menu {
+#settings-menu,
+#keybindings-menu {
     position: absolute;
     top: 0;
     left: 0;
@@ -27,7 +28,8 @@
 }
 
 #pause-menu,
-#settings-menu {
+#settings-menu,
+#keybindings-menu {
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -64,7 +66,8 @@
 
 /* Pause and Settings Containers */
 #pause-menu-container,
-#settings-menu-container {
+#settings-menu-container,
+#keybindings-menu-container {
     width: 50vw;
     max-width: 600px;
     min-width: 300px;
@@ -75,6 +78,11 @@
     padding: 20px;
     border-radius: 8px;
     backdrop-filter: blur(2px);
+}
+
+#keybindings-menu-container {
+    max-height: 80vh;
+    overflow-y: auto;
 }
 
 .setting-item {
@@ -139,4 +147,74 @@
     box-shadow: 0 0.8vh 0 #1c252a;
     cursor: not-allowed;
     transform: none;
+}
+
+
+/* Keybindings Menu */
+#keybindings-list {
+    width: 100%;
+    margin: 10px 0 20px 0;
+}
+
+.keybinding-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    margin: 4px 0;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.keybinding-label {
+    font-size: 16px;
+    text-shadow: 1px 1px 0px #3f3f3f;
+    text-align: left;
+    flex: 1;
+}
+
+.keybinding-keys {
+    display: flex;
+    gap: 8px;
+}
+
+.keybinding-key {
+    min-width: 60px;
+    padding: 8px 12px;
+    background: #455a64;
+    color: #fff;
+    border: 2px solid #263238;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    border-radius: 4px;
+}
+
+.keybinding-key:hover {
+    background: #546e7a;
+    border-color: #ff6f00;
+}
+
+.keybinding-key.recording {
+    background: #ff6f00;
+    border-color: #bf360c;
+    animation: pulse 0.5s infinite alternate;
+}
+
+@keyframes pulse {
+    from { opacity: 1; }
+    to { opacity: 0.6; }
+}
+
+#keybindings-buttons {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    justify-content: center;
+}
+
+#keybindings-buttons .menu-btn {
+    width: auto;
+    min-width: 120px;
 }

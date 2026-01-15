@@ -33,13 +33,14 @@ export class ChunkLoader {
     chunkSize: number,
     chunkHeight: number,
     seed?: number,
+    dbName?: string,
   ) {
     this.chunkSize = chunkSize;
     this.chunkHeight = chunkHeight;
 
     this.terrainGen = new TerrainGenerator(seed);
     this.structureGen = new StructureGenerator(this.terrainGen);
-    this.persistence = new ChunkPersistence();
+    this.persistence = new ChunkPersistence(dbName);
 
     this.generationQueue = new ChunkGenerationQueue(
       this.terrainGen,
@@ -60,6 +61,20 @@ export class ChunkLoader {
 
   public async init(): Promise<void> {
     await this.persistence.init();
+  }
+
+  /**
+   * Получить экземпляр DB для работы с метаданными
+   */
+  public getDB() {
+    return this.persistence.getDB();
+  }
+
+  /**
+   * Закрыть соединение с БД
+   */
+  public close(): void {
+    this.persistence.close();
   }
 
   public getSeed(): number {
@@ -299,7 +314,7 @@ export class ChunkLoader {
   }
 
   /**
-   * Очистить все чанки
+   * Очистить все чанки (включая БД)
    */
   public async clear(): Promise<void> {
     await this.persistence.clear();
@@ -309,6 +324,16 @@ export class ChunkLoader {
     this.generationQueue.clear();
 
     this.terrainGen.setSeed(Math.floor(Math.random() * 2147483647));
+  }
+
+  /**
+   * Очистить только меши и данные в памяти (без очистки БД)
+   * Используется при переключении между мирами
+   */
+  public clearMemory(): void {
+    this.dataManager.clear();
+    this.meshManager.clear();
+    this.generationQueue.clear();
   }
 
   /**

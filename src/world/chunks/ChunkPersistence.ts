@@ -1,14 +1,34 @@
-import { worldDB } from "../../utils/DB";
+import { DB, worldDB } from "../../utils/DB";
 
 export class ChunkPersistence {
   private knownChunkKeys: Set<string> = new Set();
   private loadingChunks: Set<string> = new Set();
+  private db: DB;
+
+  constructor(dbName?: string) {
+    // Если передано имя БД, создаём новый экземпляр, иначе используем глобальный
+    this.db = dbName ? new DB(dbName, "chunks") : worldDB;
+  }
 
   public async init(): Promise<void> {
-    await worldDB.init();
-    const keys = await worldDB.keys("chunks");
+    await this.db.init();
+    const keys = await this.db.keys("chunks");
     keys.forEach((k) => this.knownChunkKeys.add(k as string));
     console.log(`Loaded world index. ${this.knownChunkKeys.size} chunks in DB.`);
+  }
+
+  /**
+   * Закрыть соединение с БД
+   */
+  public close(): void {
+    this.db.close();
+  }
+
+  /**
+   * Получить экземпляр DB
+   */
+  public getDB(): DB {
+    return this.db;
   }
 
   public async loadChunk(key: string): Promise<Uint8Array | null> {
@@ -21,7 +41,7 @@ export class ChunkPersistence {
       return new Promise((resolve) => {
         const check = () => {
           if (!this.loadingChunks.has(key)) {
-            worldDB.get(key, "chunks").then(resolve);
+            this.db.get(key, "chunks").then(resolve);
           } else {
             setTimeout(check, 50);
           }
@@ -32,7 +52,7 @@ export class ChunkPersistence {
 
     this.loadingChunks.add(key);
     try {
-      const data = await worldDB.get(key, "chunks");
+      const data = await this.db.get(key, "chunks");
       return data as Uint8Array | null;
     } finally {
       this.loadingChunks.delete(key);
@@ -40,7 +60,7 @@ export class ChunkPersistence {
   }
 
   public async saveChunk(key: string, data: Uint8Array): Promise<void> {
-    await worldDB.set(key, data, "chunks");
+    await this.db.set(key, data, "chunks");
     this.knownChunkKeys.add(key);
   }
 
@@ -53,7 +73,7 @@ export class ChunkPersistence {
   }
 
   public async clear(): Promise<void> {
-    await worldDB.clear();
+    await this.db.clear();
     this.knownChunkKeys.clear();
     this.loadingChunks.clear();
   }

@@ -59,8 +59,8 @@
         <div id="main-menu">
             <img src="/logo.png" id="game-logo" alt="QubeForge" />
             <div id="main-menu-buttons">
-                <button id="btn-new-game" class="menu-btn">Новая Игра</button>
-                <button id="btn-continue" class="menu-btn">Продолжить</button>
+                <button id="btn-singleplayer" class="menu-btn">Одиночная игра</button>
+                <button id="btn-multiplayer" class="menu-btn" disabled>Сетевая игра</button>
                 <button id="btn-mods" class="menu-btn">Моды</button>
                 <button id="btn-settings-main" class="menu-btn">
                     Настройки
@@ -94,7 +94,93 @@
                     <label for="cb-clouds">Облака</label>
                     <input type="checkbox" id="cb-clouds" checked />
                 </div>
+                <button id="btn-keybindings" class="menu-btn">Управление</button>
+                <button id="btn-audio-settings" class="menu-btn">Звук</button>
                 <button id="btn-back-settings" class="menu-btn">Назад</button>
+            </div>
+        </div>
+
+        <!-- Keybindings Menu -->
+        <div id="keybindings-menu" style="display: none">
+            <div id="keybindings-menu-container">
+                <h2 style="font-size: 30px">Управление</h2>
+                <div id="keybindings-list"></div>
+                <div id="keybindings-buttons">
+                    <button id="btn-reset-keybindings" class="menu-btn">Сбросить</button>
+                    <button id="btn-back-keybindings" class="menu-btn">Назад</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audio Settings Menu -->
+        <div id="audio-menu" style="display: none">
+            <div id="audio-menu-container">
+                <h2 style="font-size: 30px">Звук</h2>
+                <div id="audio-sliders-list"></div>
+                <div id="audio-buttons">
+                    <button id="btn-reset-audio" class="menu-btn">Сбросить</button>
+                    <button id="btn-back-audio" class="menu-btn">Назад</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- World Selection Menu -->
+        <div id="world-selection-menu" style="display: none">
+            <h2>Выбор Мира</h2>
+            <div id="worlds-list"></div>
+            <div id="world-selection-buttons">
+                <button id="btn-new-world" class="menu-btn">Создать Мир</button>
+                <button id="btn-back-worlds" class="menu-btn">Назад</button>
+            </div>
+        </div>
+
+        <!-- World Creation Dialog -->
+        <div id="world-creation-dialog" style="display: none">
+            <h2>Новый Мир</h2>
+            <div class="creation-form">
+                <div class="form-group">
+                    <label>Название мира</label>
+                    <input id="world-name-input" type="text" placeholder="Мой мир" maxlength="32" />
+                    <span id="world-name-error" class="error-text"></span>
+                </div>
+                <div class="form-group">
+                    <label>Seed (опционально)</label>
+                    <input id="world-seed-input" type="text" placeholder="Случайный" />
+                </div>
+                <div class="form-group">
+                    <label>Режим игры</label>
+                    <select id="world-gamemode-select">
+                        <option value="survival">Выживание</option>
+                        <option value="creative">Творчество</option>
+                        <option value="hardcore">Хардкор</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Сложность</label>
+                    <select id="world-difficulty-select">
+                        <option value="1">Легко</option>
+                        <option value="2" selected>Нормально</option>
+                        <option value="3">Сложно</option>
+                        <option value="0">Мирный</option>
+                    </select>
+                </div>
+                <div class="dialog-buttons">
+                    <button id="btn-create-world" class="menu-btn">Создать</button>
+                    <button id="btn-cancel-create" class="menu-btn">Отмена</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- World Delete Confirm -->
+        <div id="world-delete-confirm" style="display: none">
+            <div class="delete-confirm-box">
+                <h2>Удалить мир?</h2>
+                <p id="delete-world-name"></p>
+                <p class="warning-text">Это действие необратимо!</p>
+                <div class="dialog-buttons">
+                    <button id="btn-confirm-delete" class="menu-btn danger">Удалить</button>
+                    <button id="btn-cancel-delete" class="menu-btn">Отмена</button>
+                </div>
             </div>
         </div>
 

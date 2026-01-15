@@ -15,6 +15,9 @@ export class PlayerCombat {
   private cursorMesh?: THREE.Mesh;
   private crackMesh?: THREE.Mesh;
 
+  // Cached vector to avoid allocation in hot path
+  private readonly tempVector2 = new THREE.Vector2(0, 0);
+
   constructor(
     camera: PerspectiveCamera,
     scene: THREE.Scene,
@@ -62,7 +65,7 @@ export class PlayerCombat {
     const toolId = this.getSelectedSlotItem();
     const damage = this.calculateDamage(toolId);
 
-    this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
+    this.raycaster.setFromCamera(this.tempVector2, this.camera);
     const intersects = this.raycaster.intersectObjects(
       this.scene.children,
       true,

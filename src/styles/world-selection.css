@@ -1,0 +1,413 @@
+/* World Selection Menu - Minecraft Style */
+#world-selection-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  font-family: "Courier New", Courier, monospace;
+  color: white;
+}
+
+#world-selection-menu h2 {
+  font-family: "Press Start 2P", cursive;
+  font-size: clamp(18px, 3vw, 32px);
+  margin-bottom: 20px;
+  text-shadow: 3px 3px 0px #263238;
+  text-transform: uppercase;
+}
+
+#worlds-list {
+  width: 90%;
+  max-width: 700px;
+  max-height: 50vh;
+  overflow-y: auto;
+  margin-bottom: 20px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  backdrop-filter: blur(2px);
+}
+
+/* World Card - Minecraft Style */
+.world-card {
+  background: #455a64;
+  border: 4px solid #263238;
+  padding: 15px;
+  margin-bottom: 15px;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  box-shadow:
+    0 4px 0 #263238,
+    0 6px 10px rgba(0, 0, 0, 0.4);
+}
+
+.world-card:hover {
+  background: #546e7a;
+  border-color: #ff6f00;
+  transform: translateY(-2px);
+  box-shadow:
+    0 6px 0 #bf360c,
+    0 8px 12px rgba(0, 0, 0, 0.5);
+}
+
+.world-card:active {
+  transform: translateY(2px);
+  box-shadow:
+    0 2px 0 #bf360c,
+    0 3px 5px rgba(0, 0, 0, 0.4);
+}
+
+.world-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.world-card-name {
+  font-family: "Press Start 2P", cursive;
+  font-size: clamp(12px, 1.5vw, 16px);
+  color: #fff;
+  text-shadow: 2px 2px 0px #263238;
+}
+
+.world-card-mode {
+  font-family: "Press Start 2P", cursive;
+  font-size: clamp(8px, 1vw, 10px);
+  padding: 4px 8px;
+  background: #2e7d32;
+  border: 2px solid #1b5e20;
+  color: #a5d6a7;
+  text-transform: uppercase;
+}
+
+.world-card-mode.creative {
+  background: #1565c0;
+  border-color: #0d47a1;
+  color: #90caf9;
+}
+
+.world-card-mode.hardcore {
+  background: #c62828;
+  border-color: #b71c1c;
+  color: #ef9a9a;
+}
+
+.world-card-info {
+  font-size: 14px;
+  color: #b0bec5;
+  margin-bottom: 12px;
+  text-shadow: 1px 1px 0px #263238;
+}
+
+.world-card-info span {
+  margin-right: 20px;
+}
+
+.world-card-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.world-card-btn {
+  padding: 10px 20px;
+  border: 3px solid #263238;
+  cursor: pointer;
+  font-family: "Press Start 2P", cursive;
+  font-size: clamp(8px, 1vw, 12px);
+  text-transform: uppercase;
+  transition: all 0.1s ease;
+  box-shadow: 0 3px 0 #263238;
+}
+
+.world-card-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 0 #263238;
+}
+
+.world-card-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #263238;
+}
+
+.world-card-btn.play {
+  background: #2e7d32;
+  border-color: #1b5e20;
+  color: white;
+  box-shadow: 0 3px 0 #1b5e20;
+}
+
+.world-card-btn.play:hover {
+  background: #388e3c;
+  border-color: #ff6f00;
+  box-shadow: 0 4px 0 #bf360c;
+}
+
+.world-card-btn.delete {
+  background: #c62828;
+  border-color: #b71c1c;
+  color: white;
+  box-shadow: 0 3px 0 #b71c1c;
+}
+
+.world-card-btn.delete:hover {
+  background: #d32f2f;
+  border-color: #ff6f00;
+  box-shadow: 0 4px 0 #bf360c;
+}
+
+#world-selection-buttons {
+  display: flex;
+  gap: 15px;
+  width: 90%;
+  max-width: 700px;
+  justify-content: center;
+}
+
+#world-selection-buttons .menu-btn {
+  width: auto;
+  min-width: 200px;
+}
+
+/* Empty State */
+.worlds-empty {
+  text-align: center;
+  padding: 40px;
+  color: #78909c;
+}
+
+.worlds-empty p {
+  font-size: 16px;
+  margin-bottom: 10px;
+  text-shadow: 1px 1px 0px #263238;
+}
+
+/* World Creation Dialog */
+#world-creation-dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 101;
+  font-family: "Courier New", Courier, monospace;
+  color: white;
+}
+
+#world-creation-dialog h2 {
+  font-family: "Press Start 2P", cursive;
+  font-size: clamp(16px, 2.5vw, 28px);
+  margin-bottom: 25px;
+  text-shadow: 3px 3px 0px #263238;
+  text-transform: uppercase;
+}
+
+.creation-form {
+  width: 90%;
+  max-width: 500px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 25px;
+  border-radius: 8px;
+  backdrop-filter: blur(2px);
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-family: "Press Start 2P", cursive;
+  font-size: clamp(10px, 1.2vw, 14px);
+  color: #b0bec5;
+  text-shadow: 1px 1px 0px #263238;
+  text-transform: uppercase;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 12px 15px;
+  border: 4px solid #263238;
+  background: #455a64;
+  color: white;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 16px;
+  box-sizing: border-box;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #ff6f00;
+  background: #546e7a;
+}
+
+.form-group input::placeholder {
+  color: #78909c;
+}
+
+.form-group select {
+  cursor: pointer;
+}
+
+.form-group select option {
+  background: #455a64;
+  color: white;
+}
+
+.error-text {
+  display: block;
+  color: #ef5350;
+  font-size: 12px;
+  margin-top: 5px;
+  min-height: 16px;
+  text-shadow: 1px 1px 0px #263238;
+}
+
+.dialog-buttons {
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+  justify-content: center;
+}
+
+.dialog-buttons .menu-btn {
+  width: auto;
+  min-width: 150px;
+}
+
+/* World Delete Confirm */
+#world-delete-confirm {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 102;
+  font-family: "Courier New", Courier, monospace;
+  color: white;
+}
+
+.delete-confirm-box {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 30px;
+  border-radius: 8px;
+  backdrop-filter: blur(2px);
+  text-align: center;
+  max-width: 500px;
+}
+
+#world-delete-confirm h2 {
+  font-family: "Press Start 2P", cursive;
+  font-size: clamp(14px, 2vw, 22px);
+  margin-bottom: 15px;
+  color: #ef5350;
+  text-shadow: 2px 2px 0px #263238;
+  text-transform: uppercase;
+}
+
+#delete-world-name {
+  font-family: "Press Start 2P", cursive;
+  font-size: clamp(12px, 1.5vw, 18px);
+  margin-bottom: 10px;
+  color: #fff;
+  text-shadow: 2px 2px 0px #263238;
+}
+
+.warning-text {
+  color: #ffab91;
+  font-size: 14px;
+  margin-bottom: 25px;
+  text-shadow: 1px 1px 0px #263238;
+}
+
+.menu-btn.danger {
+  background: #c62828 !important;
+  border-color: #b71c1c !important;
+  box-shadow: 0 0.8vh 0 #b71c1c !important;
+}
+
+.menu-btn.danger:hover {
+  background: #d32f2f !important;
+  border-color: #ff6f00 !important;
+  box-shadow: 0 1vh 0 #bf360c !important;
+}
+
+/* Scrollbar Styling */
+#worlds-list::-webkit-scrollbar {
+  width: 12px;
+}
+
+#worlds-list::-webkit-scrollbar-track {
+  background: #263238;
+  border: 2px solid #1c252a;
+}
+
+#worlds-list::-webkit-scrollbar-thumb {
+  background: #455a64;
+  border: 2px solid #263238;
+}
+
+#worlds-list::-webkit-scrollbar-thumb:hover {
+  background: #546e7a;
+}
+
+/* Mobile Responsive */
+@media (max-width: 600px) {
+  #world-selection-menu h2,
+  #world-creation-dialog h2 {
+    font-size: 16px;
+  }
+
+  .world-card {
+    padding: 12px;
+  }
+
+  .world-card-name {
+    font-size: 12px;
+  }
+
+  .world-card-buttons {
+    flex-wrap: wrap;
+  }
+
+  .world-card-btn {
+    padding: 8px 12px;
+    font-size: 10px;
+  }
+
+  .form-group input,
+  .form-group select {
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  #world-selection-buttons,
+  .dialog-buttons {
+    flex-direction: column;
+    width: 90%;
+  }
+
+  #world-selection-buttons .menu-btn,
+  .dialog-buttons .menu-btn {
+    width: 100%;
+    min-width: unset;
+  }
+}

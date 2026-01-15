@@ -48,6 +48,9 @@ export class Mob {
   private fireTimer = 0;
   private fireMesh: THREE.Mesh | null = null;
 
+  // Cached vectors to avoid allocation in hot path
+  private readonly tempKnockback = new THREE.Vector3();
+
   constructor(
     world: World,
     scene: THREE.Scene,
@@ -159,13 +162,10 @@ export class Mob {
 
     // Knockback
     if (attackerPos) {
-      const knockbackDir = this.mesh.position
-        .clone()
-        .sub(attackerPos)
-        .normalize();
-      knockbackDir.y = 0.4; // Slightly upward
-      knockbackDir.normalize();
-      this.velocity.add(knockbackDir.multiplyScalar(8.0));
+      this.tempKnockback.copy(this.mesh.position).sub(attackerPos).normalize();
+      this.tempKnockback.y = 0.4; // Slightly upward
+      this.tempKnockback.normalize();
+      this.velocity.addScaledVector(this.tempKnockback, 8.0);
       this.isOnGround = false;
     }
 

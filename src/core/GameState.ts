@@ -5,6 +5,8 @@ export class GameState {
   private isGameStarted: boolean = false;
   private isResuming: boolean = false;
   private previousMenu: HTMLElement | null = null;
+  private sessionStartTime: number = 0;
+  private lastSaveTime: number = 0;
 
   public getPaused(): boolean {
     return this.isPaused;
@@ -20,6 +22,10 @@ export class GameState {
 
   public setGameStarted(started: boolean): void {
     this.isGameStarted = started;
+    if (started) {
+      this.sessionStartTime = Date.now();
+      this.lastSaveTime = Date.now();
+    }
   }
 
   public getIsResuming(): boolean {
@@ -38,9 +44,25 @@ export class GameState {
     this.previousMenu = menu;
   }
 
+  /**
+   * Получить время с последнего сохранения (в секундах)
+   */
+  public getTimeSinceLastSave(): number {
+    return Math.floor((Date.now() - this.lastSaveTime) / 1000);
+  }
+
+  /**
+   * Отметить время сохранения
+   */
+  public markSaveTime(): void {
+    this.lastSaveTime = Date.now();
+  }
+
   public reset(): void {
     this.isPaused = true;
     this.isGameStarted = false;
     this.previousMenu = null;
+    this.sessionStartTime = 0;
+    this.lastSaveTime = 0;
   }
 }

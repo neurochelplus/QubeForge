@@ -31,13 +31,27 @@ export class ChunkManager {
   private lastPlayerChunkX: number = -Infinity;
   private lastPlayerChunkZ: number = -Infinity;
 
-  constructor(scene: THREE.Scene, seed?: number) {
-    this.loader = new ChunkLoader(scene, this.chunkSize, this.chunkHeight, seed);
+  constructor(scene: THREE.Scene, seed?: number, dbName?: string) {
+    this.loader = new ChunkLoader(scene, this.chunkSize, this.chunkHeight, seed, dbName);
     this.visibility = new ChunkVisibility(this.chunkSize, this.chunkHeight);
   }
 
   public async init(): Promise<void> {
     await this.loader.init();
+  }
+
+  /**
+   * Получить экземпляр DB для работы с метаданными
+   */
+  public getDB() {
+    return this.loader.getDB();
+  }
+
+  /**
+   * Закрыть соединение с БД
+   */
+  public close(): void {
+    this.loader.close();
   }
 
   public getSeed(): number {
@@ -79,7 +93,7 @@ export class ChunkManager {
         navigator.userAgent,
       ) ||
       (navigator.maxTouchPoints > 0 && window.innerWidth < 1024);
-    const radius = isMobile ? 2 : 3;
+    const radius = isMobile ? 2 : 2; // Уменьшен с 3 до 2 для лучшей производительности
 
     const activeChunks = new Set<string>();
 
@@ -204,6 +218,13 @@ export class ChunkManager {
   }
 
   /**
+   * Получить количество грязных чанков
+   */
+  public getDirtyChunksCount(): number {
+    return this.loader.getDirtyChunks().size;
+  }
+
+  /**
    * Получить количество загруженных чанков
    */
   public getChunkCount(): { visible: number; total: number } {
@@ -219,6 +240,15 @@ export class ChunkManager {
 
   public async clear(): Promise<void> {
     await this.loader.clear();
+    this.visibility.clearAll();
+  }
+
+  /**
+   * Очистить только меши и данные в памяти (без очистки БД)
+   * Используется при переключении между мирами
+   */
+  public clearMemory(): void {
+    this.loader.clearMemory();
     this.visibility.clearAll();
   }
 }

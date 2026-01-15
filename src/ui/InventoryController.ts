@@ -90,6 +90,7 @@ export class InventoryController {
       this.world.saveWorld({
         position: this.controls.object.position,
         inventory: this.inventory.serialize(),
+        sessionTime: 0, // Не добавляем время при закрытии инвентаря
       });
       FurnaceManager.getInstance().save();
 

@@ -37,6 +37,12 @@ export class PlayerPhysics {
   private invertedControls = false;
   private invertedTimer = 0;
 
+  // Cached vectors to avoid allocation in hot path
+  private readonly forward = new THREE.Vector3();
+  private readonly right = new THREE.Vector3();
+  private readonly moveDir = new THREE.Vector3();
+  private static readonly UP = new THREE.Vector3(0, 1, 0);
+
   constructor(controls: PointerLockControls, world: World) {
     this.controls = controls;
     this.world = world;
@@ -127,20 +133,18 @@ export class PlayerPhysics {
     }
 
     // Get Camera Direction (World projected to flat plane)
-    const forward = new THREE.Vector3();
-    this.controls.getDirection(forward);
-    forward.y = 0;
-    forward.normalize();
+    this.controls.getDirection(this.forward);
+    this.forward.y = 0;
+    this.forward.normalize();
 
-    const right = new THREE.Vector3();
-    right.crossVectors(forward, new THREE.Vector3(0, 1, 0));
+    this.right.crossVectors(this.forward, PlayerPhysics.UP);
 
     // Wish Direction (World)
-    const moveDir = new THREE.Vector3()
-      .addScaledVector(forward, inputZ)
-      .addScaledVector(right, inputX);
+    this.moveDir.set(0, 0, 0)
+      .addScaledVector(this.forward, inputZ)
+      .addScaledVector(this.right, inputX);
 
-    if (moveDir.lengthSq() > 0) moveDir.normalize();
+    if (this.moveDir.lengthSq() > 0) this.moveDir.normalize();
 
     // Acceleration & Friction
     if (
@@ -150,8 +154,8 @@ export class PlayerPhysics {
       this.moveRight
     ) {
       const currentSpeed = this.isSprinting ? this.sprintSpeed : this.walkSpeed;
-      this.velocity.x += moveDir.x * currentSpeed * safeDelta;
-      this.velocity.z += moveDir.z * currentSpeed * safeDelta;
+      this.velocity.x += this.moveDir.x * currentSpeed * safeDelta;
+      this.velocity.z += this.moveDir.z * currentSpeed * safeDelta;
     }
 
     const damping = Math.exp(-this.friction * safeDelta);

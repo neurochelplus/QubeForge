@@ -15,6 +15,9 @@ export class InventoryUI {
   private isMobile: boolean;
 
   private touchStartSlotIndex: number | null = null;
+  
+  // Cached slot elements to avoid querySelectorAll in refresh() hot path
+  private slotCache: Map<number, HTMLElement[]> = new Map();
 
   public onInventoryChange: (() => void) | null = null;
 
@@ -41,15 +44,20 @@ export class InventoryUI {
   private init() {
     this.hotbarContainer.innerHTML = "";
     this.inventoryGrid.innerHTML = "";
+    this.slotCache.clear();
 
     // Hotbar (0-8)
     for (let i = 0; i < 9; i++) {
-      this.hotbarContainer.appendChild(this.createSlotElement(i, true));
+      const el = this.createSlotElement(i, true);
+      this.hotbarContainer.appendChild(el);
+      this.cacheSlot(i, el);
     }
 
     // Inventory Grid (9-35)
     for (let i = 9; i < 36; i++) {
-      this.inventoryGrid.appendChild(this.createSlotElement(i, false));
+      const el = this.createSlotElement(i, false);
+      this.inventoryGrid.appendChild(el);
+      this.cacheSlot(i, el);
     }
 
     // Separator
@@ -60,7 +68,18 @@ export class InventoryUI {
 
     // Hotbar Copy in Grid (0-8)
     for (let i = 0; i < 9; i++) {
-      this.inventoryGrid.appendChild(this.createSlotElement(i, false));
+      const el = this.createSlotElement(i, false);
+      this.inventoryGrid.appendChild(el);
+      this.cacheSlot(i, el);
+    }
+  }
+  
+  private cacheSlot(index: number, el: HTMLElement) {
+    const arr = this.slotCache.get(index);
+    if (arr) {
+      arr.push(el);
+    } else {
+      this.slotCache.set(index, [el]);
     }
   }
 
@@ -222,7 +241,7 @@ export class InventoryUI {
 
   private updateSlotVisuals(index: number) {
     const slot = this.inventory.getSlot(index);
-    const elements = document.querySelectorAll(`.slot[data-index="${index}"]`);
+    const elements = this.slotCache.get(index) || [];
 
     elements.forEach((el) => {
       if (el.parentElement === this.hotbarContainer) {

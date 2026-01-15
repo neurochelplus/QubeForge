@@ -1,16 +1,14 @@
-const CACHE_NAME = 'mc-store-v2';
+const CACHE_NAME = 'mc-store-v3';
 const CONTENT_TO_CACHE = [
   '/',
   '/index.html',
-  '/src/style.css',
 ];
 
 self.addEventListener('install', (e) => {
   console.log('[Service Worker] Install');
-  self.skipWaiting(); // Force activation
+  self.skipWaiting();
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[Service Worker] Caching all: app shell and content');
       return cache.addAll(CONTENT_TO_CACHE);
     }),
   );
@@ -22,18 +20,36 @@ self.addEventListener('activate', (e) => {
     caches.keys().then((keyList) => {
       return Promise.all(keyList.map((key) => {
         if (key !== CACHE_NAME) {
-          console.log('[Service Worker] Removing old cache', key);
           return caches.delete(key);
         }
       }));
-    }).then(() => self.clients.claim()) // Become available to all pages
+    }).then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('fetch', (e) => {
+  // В dev-режиме пропускаем всё напрямую
+  if (e.request.url.includes('localhost')) {
+    return;
+  }
+  
+  // Только GET запросы
+  if (e.request.method !== 'GET') {
+    return;
+  }
+
   e.respondWith(
-    fetch(e.request).catch(() => {
-        return caches.match(e.request);
-    })
+    fetch(e.request)
+      .catch(() => {
+        return caches.match(e.request).then((response) => {
+          if (response) {
+            return response;
+          }
+          return new Response('Offline', { 
+            status: 503, 
+            statusText: 'Service Unavailable' 
+          });
+        });
+      })
   );
 });

@@ -1,290 +1,158 @@
+/**
+ * Menus - Фасад для управления всеми меню игры
+ */
 import { Game } from "../core/Game";
-import { worldDB } from "../utils/DB";
 import { modManagerUI } from "../modding";
 import { FeatureToggles } from "../utils/FeatureToggles";
+import { KeybindingsMenu } from "./KeybindingsMenu";
+import { AudioSettingsMenu } from "./AudioSettingsMenu";
+import { audioSystem } from "../audio";
+import { WorldSelectionUI } from "./WorldSelectionUI";
+import { 
+  initMenuElements, 
+  MenuMusic, 
+  PauseMenuController, 
+  GameLauncher,
+  type MenuElements 
+} from "./menus";
 
 export class Menus {
   private game: Game;
-
-  private mainMenu: HTMLElement;
-  private pauseMenu: HTMLElement;
-  private settingsMenu: HTMLElement;
-  private inventoryMenu: HTMLElement;
-  private uiContainer: HTMLElement;
-  private mobileUi: HTMLElement | null;
-  private bgVideo: HTMLVideoElement;
-  private menuMusic: HTMLAudioElement;
-  private crosshair: HTMLElement;
-
-  // Buttons
-  private btnNewGame: HTMLElement;
-  private btnContinue: HTMLButtonElement;
-  private btnMods: HTMLElement;
-  private btnResume: HTMLElement;
-  private btnExit: HTMLElement;
-  private resumeTimeout: number | null = null;
-  private btnSettingsMain: HTMLElement;
-  private btnSettingsPause: HTMLElement;
-  private btnBackSettings: HTMLElement;
-
-  // Settings
-  private cbShadows: HTMLInputElement;
-  private cbClouds: HTMLInputElement;
+  private elements: MenuElements;
+  private menuMusic: MenuMusic;
+  private pauseController: PauseMenuController;
+  private gameLauncher: GameLauncher;
+  
+  private keybindingsMenu: KeybindingsMenu;
+  private audioSettingsMenu: AudioSettingsMenu;
+  private worldSelectionUI: WorldSelectionUI;
 
   constructor(game: Game) {
     this.game = game;
+    this.elements = initMenuElements();
+    this.menuMusic = new MenuMusic(this.elements.mainMenu);
+    this.pauseController = new PauseMenuController(game, this.elements);
+    this.gameLauncher = new GameLauncher(game, this.elements, this.menuMusic);
+    
+    this.keybindingsMenu = new KeybindingsMenu();
+    this.audioSettingsMenu = new AudioSettingsMenu();
+    this.worldSelectionUI = new WorldSelectionUI();
 
-    this.mainMenu = document.getElementById("main-menu")!;
-    this.pauseMenu = document.getElementById("pause-menu")!;
-    this.settingsMenu = document.getElementById("settings-menu")!;
-    this.inventoryMenu = document.getElementById("inventory-menu")!;
-    this.uiContainer = document.getElementById("ui-container")!;
-    this.mobileUi = document.getElementById("mobile-ui");
-    this.bgVideo = document.getElementById("bg-video") as HTMLVideoElement;
-    this.crosshair = document.getElementById("crosshair")!;
-
-    this.menuMusic = new Audio("/menu_music.mp3");
-    this.menuMusic.loop = true;
-    this.menuMusic.volume = 0.3;
-
-    // Autoplay policy handling
-    document.addEventListener(
-      "click",
-      () => {
-        if (this.mainMenu.style.display === "flex" && this.menuMusic.paused) {
-          this.menuMusic.play().catch(() => {});
-        }
-      },
-      { once: true },
-    );
-
-    this.btnNewGame = document.getElementById("btn-new-game")!;
-    this.btnContinue = document.getElementById(
-      "btn-continue",
-    )! as HTMLButtonElement;
-    this.btnMods = document.getElementById("btn-mods")!;
-    this.btnResume = document.getElementById("btn-resume")!;
-    this.btnExit = document.getElementById("btn-exit")!;
-    this.btnSettingsMain = document.getElementById("btn-settings-main")!;
-    this.btnSettingsPause = document.getElementById("btn-settings-pause")!;
-    this.btnBackSettings = document.getElementById("btn-back-settings")!;
-
-    this.cbShadows = document.getElementById("cb-shadows") as HTMLInputElement;
-    this.cbClouds = document.getElementById("cb-clouds") as HTMLInputElement;
-
-    this.btnContinue.disabled = true; // Default to disabled
-    this.checkSaveState();
+    // Initialize audio system
+    audioSystem.init().catch(console.error);
 
     // Check feature toggle for mods button
     const toggles = FeatureToggles.getInstance();
     if (!toggles.isEnabled('show_mods')) {
-      this.btnMods.style.display = 'none';
-      // Skip event listener registration for mods button
-      this.initListenersWithoutMods();
-      return;
+      this.elements.btnMods.style.display = 'none';
     }
 
-    this.initListeners();
+    this.initListeners(toggles.isEnabled('show_mods'));
   }
 
-  private async checkSaveState() {
-    const hasSave = await worldDB.hasSavedData();
-    this.btnContinue.disabled = !hasSave;
-  }
-
-  private initListeners() {
-    this.cbShadows.addEventListener("change", () => {
-      this.game.environment.setShadowsEnabled(this.cbShadows.checked);
+  private initListeners(showMods: boolean): void {
+    // Settings checkboxes
+    this.elements.cbShadows.addEventListener("change", () => {
+      this.game.environment.setShadowsEnabled(this.elements.cbShadows.checked);
     });
 
-    this.cbClouds.addEventListener("change", () => {
-      this.game.environment.setCloudsEnabled(this.cbClouds.checked);
+    this.elements.cbClouds.addEventListener("change", () => {
+      this.game.environment.setCloudsEnabled(this.elements.cbClouds.checked);
     });
 
-    this.btnNewGame.addEventListener("click", () => this.startGame(false));
-    this.btnContinue.addEventListener("click", () => this.startGame(true));
-    this.btnMods.addEventListener("click", () => this.showModManager());
-    this.btnResume.addEventListener("click", () => {
-      if (this.game.renderer.getIsMobile()) {
-        this.hidePauseMenu();
-      } else {
-        // STRICT SEQUENCE:
-        // 1. Set flag to ignore potential 'unlock' noise during transition.
-        this.game.gameState.setIsResuming(true);
-        // 2. Focus body to ensure lock target is valid.
-        document.body.focus();
-        // 3. Request lock. Visual hiding happens in main.ts 'lock' event.
-        this.game.renderer.controls.lock();
+    // Main menu buttons
+    this.elements.btnSingleplayer.addEventListener("click", () => this.showWorldSelection());
+    
+    if (showMods) {
+      this.elements.btnMods.addEventListener("click", () => modManagerUI.show());
+    }
 
-        // Safety timeout: reset flag if lock fails (rare but possible)
-        setTimeout(() => {
-          this.game.gameState.setIsResuming(false);
-        }, 1000);
-      }
+    // Pause menu buttons
+    this.elements.btnResume.addEventListener("click", () => {
+      this.pauseController.handleResumeClick();
     });
-    this.btnSettingsMain.addEventListener("click", () =>
-      this.showSettingsMenu(this.mainMenu),
-    );
-    this.btnSettingsPause.addEventListener("click", () =>
-      this.showSettingsMenu(this.pauseMenu),
-    );
-    this.btnBackSettings.addEventListener("click", () =>
-      this.hideSettingsMenu(),
-    );
 
-    this.btnExit.addEventListener("click", async () => {
+    this.elements.btnExit.addEventListener("click", async () => {
+      const sessionTime = this.game.gameState.getTimeSinceLastSave();
       await this.game.world.saveWorld({
         position: this.game.renderer.controls.object.position,
         inventory: this.game.inventory.serialize(),
+        sessionTime,
       });
+      this.game.gameState.markSaveTime();
       this.showMainMenu();
+    });
+
+    // Settings buttons
+    this.elements.btnSettingsMain.addEventListener("click", () => {
+      this.showSettingsMenu(this.elements.mainMenu);
+    });
+
+    this.elements.btnSettingsPause.addEventListener("click", () => {
+      this.showSettingsMenu(this.elements.pauseMenu);
+    });
+
+    this.elements.btnBackSettings.addEventListener("click", () => {
+      this.hideSettingsMenu();
+    });
+
+    this.elements.btnKeybindings.addEventListener("click", () => {
+      this.showKeybindingsMenu();
+    });
+
+    this.elements.btnAudioSettings.addEventListener("click", () => {
+      this.showAudioSettingsMenu();
     });
   }
 
-  private initListenersWithoutMods() {
-    this.cbShadows.addEventListener("change", () => {
-      this.game.environment.setShadowsEnabled(this.cbShadows.checked);
-    });
-
-    this.cbClouds.addEventListener("change", () => {
-      this.game.environment.setCloudsEnabled(this.cbClouds.checked);
-    });
-
-    this.btnNewGame.addEventListener("click", () => this.startGame(false));
-    this.btnContinue.addEventListener("click", () => this.startGame(true));
-    // Skip mods button listener
-    this.btnResume.addEventListener("click", () => {
-      if (this.game.renderer.getIsMobile()) {
-        this.hidePauseMenu();
-      } else {
-        // STRICT SEQUENCE:
-        // 1. Set flag to ignore potential 'unlock' noise during transition.
-        this.game.gameState.setIsResuming(true);
-        // 2. Focus body to ensure lock target is valid.
-        document.body.focus();
-        // 3. Request lock. Visual hiding happens in main.ts 'lock' event.
-        this.game.renderer.controls.lock();
-
-        // Safety timeout: reset flag if lock fails (rare but possible)
-        setTimeout(() => {
-          this.game.gameState.setIsResuming(false);
-        }, 1000);
-      }
-    });
-    this.btnSettingsMain.addEventListener("click", () =>
-      this.showSettingsMenu(this.mainMenu),
-    );
-    this.btnSettingsPause.addEventListener("click", () =>
-      this.showSettingsMenu(this.pauseMenu),
-    );
-    this.btnBackSettings.addEventListener("click", () =>
-      this.hideSettingsMenu(),
-    );
-
-    this.btnExit.addEventListener("click", async () => {
-      await this.game.world.saveWorld({
-        position: this.game.renderer.controls.object.position,
-        inventory: this.game.inventory.serialize(),
-      });
-      this.showMainMenu();
-    });
-  }
-
-  public showMainMenu() {
-    this.checkSaveState();
+  public showMainMenu(): void {
     this.game.gameState.setPaused(true);
     this.game.gameState.setGameStarted(false);
 
-    this.mainMenu.style.display = "flex";
-    this.pauseMenu.style.display = "none";
-    this.settingsMenu.style.display = "none";
-    this.inventoryMenu.style.display = "none";
-    this.uiContainer.style.display = "none";
-    this.bgVideo.style.display = "block"; // Show video
-    this.crosshair.style.display = "none";
+    this.elements.mainMenu.style.display = "flex";
+    this.elements.pauseMenu.style.display = "none";
+    this.elements.settingsMenu.style.display = "none";
+    this.elements.inventoryMenu.style.display = "none";
+    this.elements.uiContainer.style.display = "none";
+    this.elements.bgVideo.style.display = "block";
+    this.elements.crosshair.style.display = "none";
 
-    this.menuMusic.play().catch(() => {});
+    this.menuMusic.play();
 
-    if (this.mobileUi) this.mobileUi.style.display = "none";
+    if (this.elements.mobileUi) {
+      this.elements.mobileUi.style.display = "none";
+    }
 
     this.game.renderer.controls.unlock();
   }
 
-  public showPauseMenu() {
-    this.game.gameState.setPaused(true);
-    this.pauseMenu.style.display = "flex";
-    this.mainMenu.style.display = "none";
-    this.settingsMenu.style.display = "none";
-    this.game.renderer.controls.unlock();
-    this.crosshair.style.display = "none";
-
-    // PC-specific Cooldown to match browser Pointer Lock security delay (~1.3s)
-    if (!this.game.renderer.getIsMobile()) {
-      // Очистить предыдущий таймаут если есть
-      if (this.resumeTimeout !== null) {
-        clearTimeout(this.resumeTimeout);
-      }
-
-      this.btnResume.style.pointerEvents = "none";
-      this.btnResume.style.opacity = "0.5";
-      this.btnResume.innerText = "Ждите...";
-
-      this.resumeTimeout = window.setTimeout(() => {
-        // Only restore if we are still in the menu
-        if (this.pauseMenu.style.display === "flex") {
-          this.btnResume.style.pointerEvents = "auto";
-          this.btnResume.style.opacity = "1";
-          this.btnResume.innerText = "Продолжить";
-        }
-        this.resumeTimeout = null;
-      }, 1300);
-    }
+  public showPauseMenu(): void {
+    this.pauseController.show();
   }
 
-  public hidePauseMenu() {
-    this.game.gameState.setPaused(false);
-    this.pauseMenu.style.display = "none";
-    this.settingsMenu.style.display = "none";
-    this.crosshair.style.display = "block";
-
-    // Очистить таймаут и восстановить кнопку
-    if (this.resumeTimeout !== null) {
-      clearTimeout(this.resumeTimeout);
-      this.resumeTimeout = null;
-    }
-
-    if (!this.game.renderer.getIsMobile()) {
-      this.btnResume.style.pointerEvents = "auto";
-      this.btnResume.style.opacity = "1";
-      this.btnResume.innerText = "Продолжить";
-    }
-
-    this.game.resetTime();
+  public hidePauseMenu(): void {
+    this.pauseController.hide();
   }
 
-  public togglePauseMenu() {
+  public togglePauseMenu(): void {
     if (!this.game.gameState.getGameStarted()) return;
 
-    if (this.settingsMenu.style.display === "flex") {
+    if (this.elements.settingsMenu.style.display === "flex") {
       this.hideSettingsMenu();
       return;
     }
 
-    if (this.game.gameState.getPaused()) {
-      this.hidePauseMenu();
-    } else {
-      this.showPauseMenu();
-    }
+    this.pauseController.toggle();
   }
 
-  private showSettingsMenu(fromMenu: HTMLElement) {
+  private showSettingsMenu(fromMenu: HTMLElement): void {
     this.game.gameState.setPreviousMenu(fromMenu);
     fromMenu.style.display = "none";
-    this.settingsMenu.style.display = "flex";
+    this.elements.settingsMenu.style.display = "flex";
   }
 
-  private hideSettingsMenu() {
-    this.settingsMenu.style.display = "none";
+  private hideSettingsMenu(): void {
+    this.elements.settingsMenu.style.display = "none";
     const prev = this.game.gameState.getPreviousMenu();
     if (prev) {
       prev.style.display = "flex";
@@ -293,15 +161,21 @@ export class Menus {
     }
   }
 
-  private showModManager() {
-    modManagerUI.show();
+  private showKeybindingsMenu(): void {
+    this.elements.settingsMenu.style.display = "none";
+    this.keybindingsMenu.show(this.elements.settingsMenu, () => {
+      this.elements.settingsMenu.style.display = "flex";
+    });
   }
 
-  private async startGame(loadSave: boolean) {
-    if (!this.game.renderer.getIsMobile()) {
-      this.game.renderer.controls.lock();
-    }
+  private showAudioSettingsMenu(): void {
+    this.elements.settingsMenu.style.display = "none";
+    this.audioSettingsMenu.show(this.elements.settingsMenu, () => {
+      this.elements.settingsMenu.style.display = "flex";
+    });
+  }
 
+<<<<<<< HEAD
     this.btnNewGame.innerText = "Загрузка...";
     this.btnContinue.innerText = "Загрузка...";
 
@@ -344,33 +218,16 @@ export class Menus {
           this.game.inventory.deserialize(data.inventory);
           this.game.inventoryUI.refresh();
         }
+=======
+  public showWorldSelection(): void {
+    this.elements.mainMenu.style.display = "none";
+    
+    this.worldSelectionUI.show(
+      (worldId) => this.gameLauncher.launch(worldId),
+      () => {
+        this.elements.mainMenu.style.display = "flex";
+>>>>>>> 3a48882 (feat: Система сохранения миров, звуковая система, рефакторинг меню)
       }
-
-      this.game.gameState.setGameStarted(true);
-      this.game.gameState.setPaused(false);
-      this.game.resetTime();
-
-      this.mainMenu.style.display = "none";
-      this.pauseMenu.style.display = "none";
-      this.settingsMenu.style.display = "none";
-      this.uiContainer.style.display = "flex";
-      this.bgVideo.style.display = "none"; // Hide video
-      this.menuMusic.pause();
-      this.menuMusic.currentTime = 0;
-      this.crosshair.style.display = "block";
-
-      if (this.mobileUi && this.game.renderer.getIsMobile()) {
-        this.mobileUi.style.display = "block";
-        document.documentElement.requestFullscreen().catch(() => {});
-      }
-    } catch (e) {
-      console.error("Failed to start game:", e);
-      alert("Error starting game: " + e);
-      if (!this.game.renderer.getIsMobile())
-        this.game.renderer.controls.unlock();
-    } finally {
-      this.btnNewGame.innerText = "Новая Игра";
-      this.btnContinue.innerText = "Продолжить";
-    }
+    );
   }
 }

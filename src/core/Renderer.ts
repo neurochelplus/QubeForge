@@ -23,7 +23,8 @@ export class Renderer {
     // Main Scene
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x87ceeb); // Sky blue
-    this.scene.fog = new THREE.Fog(0x87ceeb, 10, 50);
+    // Уменьшен fog для лучшей производительности (скрывает дальние чанки раньше)
+    this.scene.fog = new THREE.Fog(0x87ceeb, 10, 45);
 
     // UI Scene (for Hand)
     this.uiScene = new THREE.Scene();

@@ -36,9 +36,11 @@ export class ChunkVisibility {
       Math.abs(currentRotation.y - this.lastCameraRotation.y) >
         this.visibilityUpdateThreshold;
 
+    // Используем distanceToSquared вместо distanceTo (избегаем sqrt)
+    const positionThresholdSq = this.positionUpdateThreshold * this.positionUpdateThreshold;
     const positionChanged =
-      this.lastCameraPosition.distanceTo(currentPosition) >
-      this.positionUpdateThreshold;
+      this.lastCameraPosition.distanceToSquared(currentPosition) >
+      positionThresholdSq;
 
     if (!this.isFirstVisibilityUpdate && !rotationChanged && !positionChanged) {
       return; // Пропустить обновление

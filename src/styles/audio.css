@@ -1,0 +1,159 @@
+/* Audio Settings Menu Styles (matching game menu style) */
+
+#audio-menu {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 100;
+  color: white;
+  font-family: "Press Start 2P", cursive;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+#audio-menu-container {
+  width: 50vw;
+  max-width: 600px;
+  min-width: 300px;
+  max-height: 80vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 20px;
+  border-radius: 8px;
+  backdrop-filter: blur(2px);
+}
+
+#audio-menu-container h2 {
+  font-family: "Press Start 2P", cursive;
+  text-shadow: 2px 2px 0px #3f3f3f;
+  margin-bottom: 10px;
+}
+
+#audio-sliders-list {
+  width: 100%;
+  margin: 10px 0 20px 0;
+}
+
+.audio-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  margin: 4px 0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.audio-label {
+  font-family: "Press Start 2P", cursive;
+  font-size: clamp(8px, 1.2vw, 12px);
+  text-shadow: 1px 1px 0px #3f3f3f;
+  text-align: left;
+  flex: 0 0 160px;
+  color: #fff;
+}
+
+.audio-slider-container {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 12px;
+}
+
+.audio-slider {
+  flex: 1;
+  height: 8px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #455a64;
+  border: 2px solid #263238;
+  border-radius: 0;
+  outline: none;
+  cursor: pointer;
+}
+
+.audio-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 20px;
+  background: #455a64;
+  border: 2px solid #263238;
+  border-radius: 0;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  box-shadow: 0 2px 0 #263238;
+}
+
+.audio-slider::-webkit-slider-thumb:hover {
+  background: #546e7a;
+  border-color: #ff6f00;
+  box-shadow: 0 2px 0 #bf360c;
+}
+
+.audio-slider::-moz-range-thumb {
+  width: 16px;
+  height: 20px;
+  background: #455a64;
+  border: 2px solid #263238;
+  border-radius: 0;
+  cursor: pointer;
+  box-shadow: 0 2px 0 #263238;
+}
+
+.audio-slider::-moz-range-thumb:hover {
+  background: #546e7a;
+  border-color: #ff6f00;
+  box-shadow: 0 2px 0 #bf360c;
+}
+
+.audio-value {
+  flex: 0 0 55px;
+  font-family: "Press Start 2P", cursive;
+  font-size: clamp(8px, 1vw, 12px);
+  color: #fff;
+  text-align: right;
+  text-shadow: 1px 1px 0px #3f3f3f;
+}
+
+#audio-buttons {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  justify-content: center;
+}
+
+#audio-buttons .menu-btn {
+  width: auto;
+  min-width: 120px;
+}
+
+/* Mobile adjustments */
+@media (max-width: 600px) {
+  .audio-label {
+    flex: 0 0 100px;
+    font-size: 8px;
+  }
+  
+  .audio-slider {
+    height: 10px;
+  }
+  
+  .audio-slider::-webkit-slider-thumb {
+    width: 20px;
+    height: 24px;
+  }
+  
+  .audio-value {
+    font-size: 8px;
+    flex: 0 0 45px;
+  }
+}

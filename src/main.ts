@@ -10,14 +10,28 @@ import { PointerLockHandler } from "./input/PointerLockHandler";
 import { Game } from "./core/Game";
 import { FurnaceManager } from "./crafting/FurnaceManager";
 import { FeatureToggles } from "./utils/FeatureToggles";
+import { WorldManager } from "./world/WorldManager";
+import { WorldMigration } from "./world/WorldMigration";
 import "./style.css";
 import "./styles/mod-manager.css";
 import "./styles/mods.css";
+import "./styles/world-selection.css";
 
 async function initializeGame() {
   // Load feature toggles first
   const toggles = FeatureToggles.getInstance();
   await toggles.load();
+
+  // Initialize WorldManager and run migration
+  const worldManager = WorldManager.getInstance();
+  await worldManager.init();
+  
+  // Migrate old world data if exists
+  try {
+    await WorldMigration.migrate();
+  } catch (e) {
+    console.error("World migration failed:", e);
+  }
 
   // Initialize Tool Textures
   initToolTextures();

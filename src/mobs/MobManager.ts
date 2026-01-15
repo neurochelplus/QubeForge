@@ -26,6 +26,11 @@ export class MobManager {
   // Chunk Error Mob Singleton Logic
   private chunkErrorActive = false;
   private chunkErrorCooldown = 0; // Seconds until next spawn
+  
+  // Cached vectors for spawn calculations
+  private static readonly UP = new THREE.Vector3(0, 1, 0);
+  private readonly tempDir = new THREE.Vector3();
+  private readonly tempSpawnDir = new THREE.Vector3();
 
   constructor(world: World, scene: THREE.Scene, entities: ItemEntity[]) {
     this.world = world;
@@ -99,16 +104,16 @@ export class MobManager {
       }
 
       // Mob culling: скрыть дальних мобов
-      const dist = mob.mesh.position.distanceTo(playerPos);
-      mob.mesh.visible = dist < 60; // 60 блоков видимости
+      const distSq = mob.mesh.position.distanceToSquared(playerPos);
+      mob.mesh.visible = distSq < 3600; // 60^2 = 3600 блоков видимости
 
       // AI обновляется только для близких мобов
-      if (dist < 40) {
+      if (distSq < 1600) { // 40^2 = 1600
         mob.update(delta, player, onPlayerHit, isDay);
       }
 
       // Despawn if too far (> 80 blocks)
-      if (dist > 80) {
+      if (distSq > 6400) { // 80^2 = 6400
         this.despawnMob(i);
       }
     }
@@ -183,7 +188,8 @@ export class MobManager {
 
   private attemptSpawnChunkError(player: Player | THREE.Vector3, playerPos: THREE.Vector3) {
       // Determine camera direction
-      let dir = new THREE.Vector3(0, 0, -1);
+      const dir = this.tempDir;
+      dir.set(0, 0, -1);
       if (player instanceof Player) {
           player.physics.controls.getDirection(dir);
       }
@@ -200,7 +206,7 @@ export class MobManager {
           const angleOffset = (Math.random() - 0.5) * (Math.PI / 2);
           
           // Rotate dir by angleOffset around Y
-          const spawnDir = dir.clone().applyAxisAngle(new THREE.Vector3(0,1,0), angleOffset);
+          const spawnDir = this.tempSpawnDir.copy(dir).applyAxisAngle(MobManager.UP, angleOffset);
           const dist = 15 + Math.random() * 25; // 15 to 40 blocks
 
           const x = Math.floor(playerPos.x + spawnDir.x * dist);

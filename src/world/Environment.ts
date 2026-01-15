@@ -193,44 +193,31 @@ export class Environment {
     this.dirLight.color.lerp(targetLight, lerpFactor);
     this.ambientLight.intensity = THREE.MathUtils.lerp(this.ambientLight.intensity, ambientIntensity, lerpFactor);
 
-    // --- Clouds ---
+    // --- Clouds (using cached dummy to avoid allocations) ---
     const dummy = this.cloudDummy;
     const range = 200; // Radius around player
     const cloudSpeed = 2;
+    const size = range * 2;
+    const cloudTime = this.time * cloudSpeed;
+    const px = playerPos.x;
+    const pz = playerPos.z;
     
-    this.cloudData.forEach((data, i) => {
-        // Calculate wrapped position relative to player
-        // We use data.x as the "offset from origin" at time 0
-        // currentGlobalX = data.x + this.time * cloudSpeed;
+    for (let i = 0; i < this.cloudData.length; i++) {
+        const data = this.cloudData[i];
         
-        const globalX = data.x + this.time * cloudSpeed;
-        const globalZ = data.z; // Z doesn't move with time, just wraps
-        
-        // Wrap logic:
-        // Relative to player:
-        const dx = globalX - playerPos.x;
-        const dz = globalZ - playerPos.z;
-        
-        // Modulo to keep within [-range, range]
-        // ((val % size) + size) % size -> gives [0, size]
-        // We want [-range, range], so we shift
-        const size = range * 2;
+        const globalX = data.x + cloudTime;
+        const dx = globalX - px;
+        const dz = data.z - pz;
         
         const wrappedDx = ((dx % size) + size) % size - range;
         const wrappedDz = ((dz % size) + size) % size - range;
         
-        dummy.position.set(
-            playerPos.x + wrappedDx, 
-            data.y, 
-            playerPos.z + wrappedDz
-        );
-        
+        dummy.position.set(px + wrappedDx, data.y, pz + wrappedDz);
         dummy.scale.set(data.scaleX, 1, data.scaleZ);
         dummy.updateMatrix();
         this.clouds.setMatrixAt(i, dummy.matrix);
-    });
+    }
     
     this.clouds.instanceMatrix.needsUpdate = true;
   }
 }
-

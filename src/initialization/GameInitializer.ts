@@ -29,7 +29,7 @@ import { initDebugControls } from "../utils/DebugUtils";
  * Initializes all game systems and returns references
  */
 export class GameInitializer {
-  static initialize() {
+  static initialize(worldId?: string, dbName?: string) {
     // Renderer & Scene
     const gameRenderer = new Renderer();
     const gameState = new GameState();
@@ -44,8 +44,8 @@ export class GameInitializer {
     const environment = new Environment(scene);
     initDebugControls(environment);
 
-    // World
-    const world = new World(scene);
+    // World (с поддержкой worldId)
+    const world = new World(scene, worldId, dbName);
 
     // UI Elements
     const damageOverlay = document.getElementById("damage-overlay")!;

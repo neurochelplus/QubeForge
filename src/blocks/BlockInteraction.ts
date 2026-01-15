@@ -20,6 +20,10 @@ export class BlockInteraction {
   private crackMesh?: THREE.Mesh;
   private readonly MAX_DISTANCE = 6;
 
+  // Cached vectors to avoid allocation in hot path
+  private readonly tempVector2 = new THREE.Vector2(0, 0);
+  private readonly tempPoint = new THREE.Vector3();
+
   // Eating State
   private isEating = false;
   private eatTimer = 0;
@@ -176,7 +180,7 @@ export class BlockInteraction {
       // Let's prevent use if invalid target.
     }
 
-    this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
+    this.raycaster.setFromCamera(this.tempVector2, this.camera);
     const intersects = this.raycaster.intersectObjects(this.scene.children);
     const hit = intersects.find(
       (i) =>
@@ -189,12 +193,10 @@ export class BlockInteraction {
     );
 
     if (hit && hit.distance < this.MAX_DISTANCE) {
-      const p = hit.point
-        .clone()
-        .add(this.raycaster.ray.direction.clone().multiplyScalar(0.01));
-      const x = Math.floor(p.x);
-      const y = Math.floor(p.y);
-      const z = Math.floor(p.z);
+      this.tempPoint.copy(hit.point).addScaledVector(this.raycaster.ray.direction, 0.01);
+      const x = Math.floor(this.tempPoint.x);
+      const y = Math.floor(this.tempPoint.y);
+      const z = Math.floor(this.tempPoint.z);
 
       const targetId = world.getBlock(x, y, z);
       if (targetId === BLOCK.CRAFTING_TABLE) {

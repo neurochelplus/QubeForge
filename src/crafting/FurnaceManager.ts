@@ -34,6 +34,16 @@ export class FurnaceManager {
     return this.furnaces.get(`${x},${y},${z}`);
   }
 
+  // Проверяет целостность данных печи (защита от поврежденных данных из IndexedDB)
+  private validateFurnaceData(furnace: FurnaceData): boolean {
+    if (!furnace) return false;
+    // Инициализируем отсутствующие слоты
+    if (!furnace.input) furnace.input = { id: 0, count: 0 };
+    if (!furnace.fuel) furnace.fuel = { id: 0, count: 0 };
+    if (!furnace.output) furnace.output = { id: 0, count: 0 };
+    return true;
+  }
+
   public createFurnace(x: number, y: number, z: number, rotation: number = 0) {
     const key = `${x},${y},${z}`;
     if (this.furnaces.has(key)) return;
@@ -77,6 +87,9 @@ export class FurnaceManager {
   public tick(deltaTime: number) {
     // deltaTime в секундах - время с последнего кадра
     this.furnaces.forEach((furnace) => {
+      // Защита от поврежденных данных печи из IndexedDB
+      if (!this.validateFurnaceData(furnace)) return;
+
       let isBurning = furnace.burnTime > 0;
       let inventoryChanged = false;
 
@@ -89,7 +102,7 @@ export class FurnaceManager {
       // Проверяем, нужно ли сжечь новое топливо
       // Топливо сжигается только если есть что плавить
       if (!isBurning && this.canSmelt(furnace)) {
-        const fuelValue = this.getFuelBurnTime(furnace.fuel.id);
+        const fuelValue = furnace.fuel ? this.getFuelBurnTime(furnace.fuel.id) : 0;
         if (fuelValue > 0) {
           furnace.fuel.count--;
           if (furnace.fuel.count === 0) furnace.fuel.id = 0;
@@ -125,10 +138,11 @@ export class FurnaceManager {
 
   // Проверяет, можно ли переплавить предмет в печи
   private canSmelt(furnace: FurnaceData): boolean {
-    if (furnace.input.id === 0) return false; // Нет входного предмета
+    // Защита от поврежденных данных из IndexedDB
+    if (!furnace.input || furnace.input.id === 0) return false; // Нет входного предмета
     const result = this.getSmeltingResult(furnace.input.id);
     if (!result) return false; // Предмет нельзя переплавить
-    if (furnace.output.id === 0) return true; // Выходной слот пуст
+    if (!furnace.output || furnace.output.id === 0) return true; // Выходной слот пуст
     if (furnace.output.id !== result.id) return false; // Другой предмет в выходе
     if (furnace.output.count + result.count > 64) return false; // Переполнение стака
     return true;

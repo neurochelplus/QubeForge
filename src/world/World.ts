@@ -1,17 +1,73 @@
 import * as THREE from "three";
-import { worldDB } from "../utils/DB";
 import { BLOCK } from "../constants/Blocks";
 import { ChunkManager } from "./chunks/ChunkManager";
 
 export class World {
   private chunkManager: ChunkManager;
+  private worldId: string | null = null;
 
-  constructor(scene: THREE.Scene) {
-    this.chunkManager = new ChunkManager(scene);
+  constructor(scene: THREE.Scene, worldId?: string, dbName?: string) {
+    this.worldId = worldId || null;
+    this.chunkManager = new ChunkManager(scene, undefined, dbName);
+  }
+
+  /**
+   * Получить ID текущего мира
+   */
+  public getWorldId(): string | null {
+    return this.worldId;
+  }
+
+  /**
+   * Установить ID мира (для переключения между мирами)
+   */
+  public setWorldId(worldId: string): void {
+    this.worldId = worldId;
+  }
+
+  /**
+   * Переинициализировать мир с новым worldId
+   * Закрывает старое соединение и создаёт новый ChunkManager
+   */
+  public async reinitialize(scene: THREE.Scene, worldId: string, dbName: string): Promise<void> {
+    // Сохраняем грязные чанки перед закрытием (только если есть что сохранять)
+    try {
+      const dirtyCount = this.chunkManager.getDirtyChunksCount();
+      if (dirtyCount > 0) {
+        await this.chunkManager.saveDirtyChunks();
+      }
+    } catch (e) {
+      console.warn("Failed to save dirty chunks before reinitialize:", e);
+    }
+    
+    // Очищаем только меши из памяти (НЕ удаляем данные из БД!)
+    this.chunkManager.clearMemory();
+    
+    // Закрываем старое соединение с БД
+    this.close();
+    
+    this.worldId = worldId;
+    
+    // Создаём новый ChunkManager
+    this.chunkManager = new ChunkManager(scene, undefined, dbName);
   }
 
   public get noiseTexture(): THREE.DataTexture {
     return this.chunkManager.getNoiseTexture();
+  }
+
+  /**
+   * Получить текущий seed мира
+   */
+  public getSeed(): number {
+    return this.chunkManager.getSeed();
+  }
+
+  /**
+   * Установить seed мира
+   */
+  public setSeed(seed: number): void {
+    this.chunkManager.setSeed(seed);
   }
 
   // Persistence
@@ -21,7 +77,8 @@ export class World {
   }> {
     await this.chunkManager.init();
 
-    const meta = await worldDB.get("player", "meta");
+    const db = this.chunkManager.getDB();
+    const meta = await db.get("player", "meta");
 
     if (meta?.seed !== undefined) {
       this.chunkManager.setSeed(meta.seed);
@@ -45,10 +102,12 @@ export class World {
   public async saveWorld(playerData: {
     position: THREE.Vector3;
     inventory: any;
+    sessionTime?: number; // Время сессии в секундах
   }) {
     console.log("Saving world...");
 
-    await worldDB.set(
+    const db = this.chunkManager.getDB();
+    await db.set(
       "player",
       {
         position: {
@@ -63,14 +122,49 @@ export class World {
     );
 
     await this.chunkManager.saveDirtyChunks();
+    
+    // Обновляем метаданные мира (lastPlayed, playtime, позиция)
+    if (this.worldId) {
+      try {
+        const { WorldManager } = await import("./WorldManager");
+        const worldManager = WorldManager.getInstance();
+        const worldMeta = await worldManager.getWorld(this.worldId);
+        
+        const updateData: any = {
+          lastPlayed: Date.now(),
+          playerPosition: {
+            x: playerData.position.x,
+            y: playerData.position.y,
+            z: playerData.position.z,
+          },
+        };
+        
+        // Обновляем playtime если передано время сессии
+        if (playerData.sessionTime !== undefined && worldMeta) {
+          updateData.playtime = (worldMeta.playtime || 0) + playerData.sessionTime;
+        }
+        
+        await worldManager.updateWorld(this.worldId, updateData);
+      } catch (e) {
+        console.warn("Failed to update world metadata:", e);
+      }
+    }
+    
     console.log("World saved.");
   }
 
   public async deleteWorld() {
     console.log("Deleting world...");
-    await worldDB.init();
+    await this.chunkManager.init();
     await this.chunkManager.clear();
     console.log("World deleted.");
+  }
+
+  /**
+   * Закрыть соединение с БД мира
+   */
+  public close(): void {
+    this.chunkManager.close();
   }
 
   // Chunk operations

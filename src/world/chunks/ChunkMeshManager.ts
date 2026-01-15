@@ -92,20 +92,33 @@ export class ChunkMeshManager {
 
   /**
    * Обновить сортировку мешей для early-z optimization
+   * Вызывается только при изменении позиции игрока на новый чанк
    */
   public updateSorting(playerPos: THREE.Vector3): void {
     const playerCx = Math.floor(playerPos.x / this.chunkSize);
     const playerCz = Math.floor(playerPos.z / this.chunkSize);
 
+    // Пропустить если игрок в том же чанке
+    if (playerCx === this.lastSortCx && playerCz === this.lastSortCz) {
+      return;
+    }
+    this.lastSortCx = playerCx;
+    this.lastSortCz = playerCz;
+
     for (const [, chunk] of this.chunks) {
       const dx = chunk.cx - playerCx;
       const dz = chunk.cz - playerCz;
-      const distance = Math.sqrt(dx * dx + dz * dz);
+      // Используем Manhattan distance вместо sqrt (быстрее)
+      const distance = Math.abs(dx) + Math.abs(dz);
       
       // Ближние чанки рендерятся первыми (меньший renderOrder)
-      chunk.mesh.renderOrder = Math.floor(distance);
+      chunk.mesh.renderOrder = distance;
     }
   }
+  
+  // Кэш последней позиции для сортировки
+  private lastSortCx: number = -9999;
+  private lastSortCz: number = -9999;
 
   /**
    * Получить все меши

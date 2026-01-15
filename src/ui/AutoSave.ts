@@ -24,10 +24,13 @@ export class AutoSave {
   start(): void {
     this.intervalId = window.setInterval(() => {
       if (this.gameState.getGameStarted() && !this.gameState.getPaused()) {
+        const timeSinceLastSave = this.gameState.getTimeSinceLastSave();
         this.world.saveWorld({
           position: this.controls.object.position,
           inventory: this.inventory.serialize(),
+          sessionTime: timeSinceLastSave,
         });
+        this.gameState.markSaveTime();
         FurnaceManager.getInstance().save();
       }
     }, this.SAVE_INTERVAL);

@@ -23,6 +23,18 @@ export class Zombie extends Mob {
   private leftLeg: THREE.Mesh;
   private rightLeg: THREE.Mesh;
 
+  // Cached vectors to avoid allocation in hot path
+  private static readonly UP = new THREE.Vector3(0, 1, 0);
+  private readonly tempForward = new THREE.Vector3();
+  private readonly tempTarget = new THREE.Vector3();
+  private readonly tempDir = new THREE.Vector3();
+  private readonly tempPushDir = new THREE.Vector3();
+  private readonly tempEyePos = new THREE.Vector3();
+  private readonly tempToPlayer = new THREE.Vector3();
+  
+  // Cached raycaster for line-of-sight checks
+  private readonly raycaster = new THREE.Raycaster();
+
   constructor(
     world: World,
     scene: THREE.Scene,
@@ -227,47 +239,31 @@ export class Zombie extends Mob {
 
       // --- Obstacle Avoidance ---
       const p = this.mesh.position;
-      const forward = new THREE.Vector3(
-        Math.sin(angle),
-        0,
-        Math.cos(angle),
-      ).normalize();
+      this.tempForward.set(Math.sin(angle), 0, Math.cos(angle)).normalize();
       const checkDist = 1.0;
 
-      // Helper to check if direction is blocked by a wall that we cannot auto-jump (2 blocks high)
+      // Helper to check if direction is blocked
       const isBlocked = (
         origin: THREE.Vector3,
         dir: THREE.Vector3,
         d: number,
       ) => {
-        const target = origin.clone().add(dir.clone().multiplyScalar(d));
-        const tx = Math.floor(target.x);
-        const tz = Math.floor(target.z);
-        const ty = Math.floor(target.y);
-
-        // We are blocked if there is a block at Eye Level (y+1) OR (Body Level (y) AND Cannot Jump)
-        // Actually, simplistic view: Check if we will hit something we can't jump over.
-        // We can jump over 1 block. So check y+1.
-
-        // Also check for big drops? (Not implemented here, they might fall)
-
+        this.tempTarget.copy(origin).addScaledVector(dir, d);
+        const tx = Math.floor(this.tempTarget.x);
+        const tz = Math.floor(this.tempTarget.z);
+        const ty = Math.floor(this.tempTarget.y);
         return this.world.hasBlock(tx, ty + 1, tz);
       };
 
-      if (isBlocked(p, forward, checkDist)) {
+      if (isBlocked(p, this.tempForward, checkDist)) {
         // Main path blocked, try diagonals
-        const leftDir = forward
-          .clone()
-          .applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 4);
-        const rightDir = forward
-          .clone()
-          .applyAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 4);
-
-        const leftBlocked = isBlocked(p, leftDir, checkDist);
-        const rightBlocked = isBlocked(p, rightDir, checkDist);
+        this.tempDir.copy(this.tempForward).applyAxisAngle(Zombie.UP, Math.PI / 4);
+        const leftBlocked = isBlocked(p, this.tempDir, checkDist);
+        
+        this.tempDir.copy(this.tempForward).applyAxisAngle(Zombie.UP, -Math.PI / 4);
+        const rightBlocked = isBlocked(p, this.tempDir, checkDist);
 
         if (!leftBlocked && !rightBlocked) {
-          // Both open, bias slightly?
           angle += Math.PI / 4;
         } else if (!leftBlocked) {
           angle += Math.PI / 4;
@@ -275,10 +271,8 @@ export class Zombie extends Mob {
           angle -= Math.PI / 4;
         } else {
           // Both diagonals blocked, try 90 degrees
-          const left90Dir = forward
-            .clone()
-            .applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2);
-          if (!isBlocked(p, left90Dir, checkDist)) {
+          this.tempDir.copy(this.tempForward).applyAxisAngle(Zombie.UP, Math.PI / 2);
+          if (!isBlocked(p, this.tempDir, checkDist)) {
             angle += Math.PI / 2;
           } else {
             angle -= Math.PI / 2;
@@ -297,22 +291,25 @@ export class Zombie extends Mob {
       }
 
       if (dist < 1.5) {
-        const pushDir = this.mesh.position.clone().sub(playerPos).normalize();
+        this.tempPushDir.copy(this.mesh.position).sub(playerPos).normalize();
         const pushSpeed = 5.0;
-        this.velocity.x += pushDir.x * pushSpeed;
-        this.velocity.z += pushDir.z * pushSpeed;
+        this.velocity.x += this.tempPushDir.x * pushSpeed;
+        this.velocity.z += this.tempPushDir.z * pushSpeed;
       }
 
       if (dist < 2.2) {
         // Line of Sight Check
-        const eyePos = this.mesh.position.clone();
-        eyePos.y += 1.6;
+        this.tempEyePos.copy(this.mesh.position);
+        this.tempEyePos.y += 1.6;
 
-        const toPlayer = playerPos.clone().sub(eyePos);
-        const distance = toPlayer.length();
-        toPlayer.normalize();
+        this.tempToPlayer.copy(playerPos).sub(this.tempEyePos);
+        const distance = this.tempToPlayer.length();
+        this.tempToPlayer.normalize();
 
-        const raycaster = new THREE.Raycaster(eyePos, toPlayer, 0, distance);
+        const raycaster = this.raycaster;
+        raycaster.set(this.tempEyePos, this.tempToPlayer);
+        raycaster.near = 0;
+        raycaster.far = distance;
         // Only check for blocks (which are in scene.children as meshes but not mobs/items)
         const intersects = raycaster.intersectObjects(this.scene.children);
 
@@ -398,17 +395,12 @@ export class Zombie extends Mob {
 
   protected onHorizontalCollision() {
     if (this.isOnGround) {
-      const direction = new THREE.Vector3(0, 0, 1).applyAxisAngle(
-        new THREE.Vector3(0, 1, 0),
-        this.mesh.rotation.y,
-      );
+      this.tempDir.set(0, 0, 1).applyAxisAngle(Zombie.UP, this.mesh.rotation.y);
       const checkDist = 0.8;
-      const checkPos = this.mesh.position
-        .clone()
-        .add(direction.multiplyScalar(checkDist));
+      this.tempTarget.copy(this.mesh.position).addScaledVector(this.tempDir, checkDist);
 
-      const x = Math.floor(checkPos.x);
-      const z = Math.floor(checkPos.z);
+      const x = Math.floor(this.tempTarget.x);
+      const z = Math.floor(this.tempTarget.z);
       const y = Math.floor(this.mesh.position.y);
 
       if (

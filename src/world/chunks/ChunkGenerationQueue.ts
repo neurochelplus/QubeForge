@@ -1,7 +1,6 @@
 import { TerrainGenerator } from "../generation/TerrainGenerator";
 import { StructureGenerator } from "../generation/StructureGenerator";
 import { ChunkPersistence } from "./ChunkPersistence";
-import { ChunkWorkerPool } from "../workers/ChunkWorkerPool";
 
 export type ChunkQueueItem = {
   cx: number;
@@ -9,25 +8,29 @@ export type ChunkQueueItem = {
   priority: number;
 };
 
+type PendingMesh = {
+  cx: number;
+  cz: number;
+  data: Uint8Array;
+};
+
 /**
  * Управление очередью генерации чанков
- * Использует Web Workers для генерации в отдельных потоках
+ * Разделяет генерацию данных и построение меша на разные кадры
+ * для избежания длинных фризов
  */
 export class ChunkGenerationQueue {
   private queue: ChunkQueueItem[] = [];
   private pendingChunks: Set<string> = new Set();
-  private generatingChunks: Set<string> = new Set();
-  private maxConcurrent: number = 2; // Максимум параллельных генераций
+  
+  // Очередь мешей, ожидающих построения (данные уже сгенерированы)
+  private pendingMeshes: PendingMesh[] = [];
 
   private terrainGen: TerrainGenerator;
   private structureGen: StructureGenerator;
   private persistence: ChunkPersistence;
   private chunkSize: number;
   private chunkHeight: number;
-  
-  // Web Worker pool
-  private workerPool: ChunkWorkerPool | null = null;
-  private useWorkers: boolean = true;
 
   constructor(
     terrainGen: TerrainGenerator,
@@ -41,30 +44,6 @@ export class ChunkGenerationQueue {
     this.persistence = persistence;
     this.chunkSize = chunkSize;
     this.chunkHeight = chunkHeight;
-    
-    // Инициализировать Worker pool
-    this.initWorkerPool();
-  }
-
-  private initWorkerPool(): void {
-    try {
-      this.workerPool = new ChunkWorkerPool(
-        this.terrainGen.getSeed(),
-        this.chunkSize,
-        this.chunkHeight,
-        2, // 2 воркера
-      );
-    } catch (e) {
-      console.warn('Web Workers not supported, falling back to main thread');
-      this.useWorkers = false;
-    }
-  }
-
-  /**
-   * Обновить seed в worker pool
-   */
-  public setSeed(seed: number): void {
-    this.workerPool?.setSeed(seed);
   }
 
   /**
@@ -73,7 +52,7 @@ export class ChunkGenerationQueue {
   public enqueue(cx: number, cz: number, priority: number): void {
     const key = `${cx},${cz}`;
     
-    if (this.pendingChunks.has(key) || this.generatingChunks.has(key)) return;
+    if (this.pendingChunks.has(key)) return;
 
     this.pendingChunks.add(key);
     this.queue.push({ cx, cz, priority });
@@ -83,67 +62,48 @@ export class ChunkGenerationQueue {
   }
 
   /**
-   * Проверить, находится ли чанк в очереди или генерируется
+   * Проверить, находится ли чанк в очереди
    */
   public isPending(cx: number, cz: number): boolean {
     const key = `${cx},${cz}`;
-    return this.pendingChunks.has(key) || this.generatingChunks.has(key);
+    return this.pendingChunks.has(key);
   }
 
   /**
-   * Обработать очередь (запустить генерацию через Workers)
+   * Обработать очередь генерации
+   * Генерация данных и построение меша в одном кадре для консистентности
    */
   public process(
     onChunkGenerated: (cx: number, cz: number, data: Uint8Array) => void,
   ): void {
-    // Запустить генерацию для чанков в очереди
-    while (
-      this.queue.length > 0 && 
-      this.generatingChunks.size < this.maxConcurrent
-    ) {
+    // Приоритет 1: построить меши для уже сгенерированных данных (из IndexedDB)
+    if (this.pendingMeshes.length > 0) {
+      const pending = this.pendingMeshes.shift()!;
+      onChunkGenerated(pending.cx, pending.cz, pending.data);
+      return;
+    }
+
+    // Приоритет 2: сгенерировать данные и сразу построить меш
+    if (this.queue.length > 0) {
       const item = this.queue.shift()!;
       const key = `${item.cx},${item.cz}`;
-      
-      this.pendingChunks.delete(key);
-      this.generatingChunks.add(key);
 
-      // Проверить persistence
+      // Проверить persistence (синхронно проверяем кэш)
       if (this.persistence.hasChunk(key)) {
-        this.loadFromPersistence(item.cx, item.cz, key, onChunkGenerated);
-      } else if (this.useWorkers && this.workerPool) {
-        // Генерация через Worker
-        this.generateWithWorker(item.cx, item.cz, key, item.priority, onChunkGenerated);
+        // Загрузка из IndexedDB — асинхронная
+        this.loadFromPersistence(item.cx, item.cz, key);
       } else {
-        // Fallback: генерация в main thread
-        const data = this.generateChunkSync(item.cx, item.cz);
-        this.generatingChunks.delete(key);
+        // Генерация — синхронная, сразу строим меш
+        const data = this.generateChunk(item.cx, item.cz);
         onChunkGenerated(item.cx, item.cz, data);
       }
+
+      this.pendingChunks.delete(key);
     }
   }
 
-  /**
-   * Генерация через Web Worker (async)
-   */
-  private async generateWithWorker(
-    cx: number,
-    cz: number,
-    key: string,
-    priority: number,
-    onChunkGenerated: (cx: number, cz: number, data: Uint8Array) => void,
-  ): Promise<void> {
-    try {
-      const data = await this.workerPool!.generateChunk(cx, cz, priority);
-      this.generatingChunks.delete(key);
-      onChunkGenerated(cx, cz, data);
-    } catch (e) {
-      console.error('Worker generation failed:', e);
-      this.generatingChunks.delete(key);
-      // Fallback to sync generation
-      const data = this.generateChunkSync(cx, cz);
-      onChunkGenerated(cx, cz, data);
-    }
-  }
+  // Флаг для предотвращения параллельных загрузок
+  private loadingKeys: Set<string> = new Set();
 
   /**
    * Загрузить чанк из IndexedDB
@@ -152,39 +112,30 @@ export class ChunkGenerationQueue {
     cx: number,
     cz: number,
     key: string,
-    onChunkGenerated: (cx: number, cz: number, data: Uint8Array) => void,
   ): Promise<void> {
-    if (this.persistence.isLoading(key)) {
-      this.generatingChunks.delete(key);
-      return;
-    }
+    // Предотвратить дублирование загрузок
+    if (this.loadingKeys.has(key)) return;
+    if (this.persistence.isLoading(key)) return;
+
+    this.loadingKeys.add(key);
 
     try {
       const data = await this.persistence.loadChunk(key);
-      this.generatingChunks.delete(key);
-      
       if (data) {
-        onChunkGenerated(cx, cz, data);
+        this.pendingMeshes.push({ cx, cz, data });
       } else {
-        // Данных нет - генерируем
-        if (this.useWorkers && this.workerPool) {
-          const generated = await this.workerPool.generateChunk(cx, cz, 0);
-          onChunkGenerated(cx, cz, generated);
-        } else {
-          const generated = this.generateChunkSync(cx, cz);
-          onChunkGenerated(cx, cz, generated);
-        }
+        const generated = this.generateChunk(cx, cz);
+        this.pendingMeshes.push({ cx, cz, data: generated });
       }
-    } catch (e) {
-      console.error('Persistence load failed:', e);
-      this.generatingChunks.delete(key);
+    } finally {
+      this.loadingKeys.delete(key);
     }
   }
 
   /**
-   * Синхронная генерация чанка (fallback)
+   * Сгенерировать новый чанк
    */
-  private generateChunkSync(cx: number, cz: number): Uint8Array {
+  private generateChunk(cx: number, cz: number): Uint8Array {
     const data = new Uint8Array(this.chunkSize * this.chunkSize * this.chunkHeight);
     const startX = cx * this.chunkSize;
     const startZ = cz * this.chunkSize;
@@ -230,16 +181,6 @@ export class ChunkGenerationQueue {
   public clear(): void {
     this.queue = [];
     this.pendingChunks.clear();
-    this.generatingChunks.clear();
-    this.workerPool?.clearQueue();
-  }
-
-  /**
-   * Завершить работу (cleanup)
-   */
-  public terminate(): void {
-    this.clear();
-    this.workerPool?.terminate();
-    this.workerPool = null;
+    this.pendingMeshes = [];
   }
 }

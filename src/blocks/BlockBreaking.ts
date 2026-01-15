@@ -24,6 +24,10 @@ export class BlockBreaking {
   private currentBreakBlock: THREE.Vector3 = new THREE.Vector3();
   private currentBreakId: number = 0;
 
+  // Cached vectors to avoid allocation in hot path
+  private readonly tempVector2 = new THREE.Vector2(0, 0);
+  private readonly tempPoint = new THREE.Vector3();
+
   private getSelectedSlotItem: () => number;
   private onBlockBreak?: (
     x: number,
@@ -134,18 +138,16 @@ export class BlockBreaking {
 
   public start(world: World): void {
     this.updateChunkMeshCache();
-    this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
+    this.raycaster.setFromCamera(this.tempVector2, this.camera);
     const hit = this.raycaster
       .intersectObjects(this.chunkMeshes)
       .find((i) => i.distance < 6);
 
     if (hit && hit.distance < 6) {
-      const p = hit.point
-        .clone()
-        .add(this.raycaster.ray.direction.clone().multiplyScalar(0.01));
-      const x = Math.floor(p.x);
-      const y = Math.floor(p.y);
-      const z = Math.floor(p.z);
+      this.tempPoint.copy(hit.point).addScaledVector(this.raycaster.ray.direction, 0.01);
+      const x = Math.floor(this.tempPoint.x);
+      const y = Math.floor(this.tempPoint.y);
+      const z = Math.floor(this.tempPoint.z);
 
       const id = world.getBlock(x, y, z);
       if (id !== 0 && id !== BLOCK.BEDROCK) {
@@ -170,19 +172,17 @@ export class BlockBreaking {
 
     // Check if still looking at same block
     this.updateChunkMeshCache();
-    this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
+    this.raycaster.setFromCamera(this.tempVector2, this.camera);
     const hit = this.raycaster
       .intersectObjects(this.chunkMeshes)
       .find((i) => i.distance < 6);
 
     let lookingAtSame = false;
     if (hit && hit.distance < 6) {
-      const p = hit.point
-        .clone()
-        .add(this.raycaster.ray.direction.clone().multiplyScalar(0.01));
-      const x = Math.floor(p.x);
-      const y = Math.floor(p.y);
-      const z = Math.floor(p.z);
+      this.tempPoint.copy(hit.point).addScaledVector(this.raycaster.ray.direction, 0.01);
+      const x = Math.floor(this.tempPoint.x);
+      const y = Math.floor(this.tempPoint.y);
+      const z = Math.floor(this.tempPoint.z);
 
       if (
         x === this.currentBreakBlock.x &&

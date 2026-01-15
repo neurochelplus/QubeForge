@@ -34,3 +34,5 @@ thumbs.db
 
 # Конфигурация тестов
 vitest.config.ts
+
+*.ogg

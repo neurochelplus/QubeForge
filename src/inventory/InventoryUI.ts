@@ -12,7 +12,6 @@ export class InventoryUI {
   private inventoryGrid: HTMLElement;
   private inventoryMenu: HTMLElement;
   private tooltip: HTMLElement;
-  private isMobile: boolean;
 
   private touchStartSlotIndex: number | null = null;
   
@@ -21,10 +20,9 @@ export class InventoryUI {
 
   public onInventoryChange: (() => void) | null = null;
 
-  constructor(inventory: Inventory, dragDrop: DragDrop, isMobile: boolean) {
+  constructor(inventory: Inventory, dragDrop: DragDrop, _isMobile: boolean) {
     this.inventory = inventory;
     this.dragDrop = dragDrop;
-    this.isMobile = isMobile;
 
     this.hotbarContainer = document.getElementById("hotbar")!;
     this.inventoryGrid = document.getElementById("inventory-grid")!;
@@ -80,6 +78,90 @@ export class InventoryUI {
       arr.push(el);
     } else {
       this.slotCache.set(index, [el]);
+    }
+
+    // Event delegation для всех слотов
+    this.setupEventDelegation();
+  }
+
+  private setupEventDelegation() {
+    // Hotbar delegation
+    this.hotbarContainer.addEventListener("mouseenter", (e) => this.handleMouseEnter(e), true);
+    this.hotbarContainer.addEventListener("mousemove", (e) => this.handleMouseMove(e), true);
+    this.hotbarContainer.addEventListener("mouseleave", (e) => this.handleMouseLeave(e), true);
+    this.hotbarContainer.addEventListener("mousedown", (e) => this.handleMouseDown(e), true);
+    this.hotbarContainer.addEventListener("touchstart", (e) => this.handleTouchStart(e), true);
+
+    // Inventory grid delegation
+    this.inventoryGrid.addEventListener("mouseenter", (e) => this.handleMouseEnter(e), true);
+    this.inventoryGrid.addEventListener("mousemove", (e) => this.handleMouseMove(e), true);
+    this.inventoryGrid.addEventListener("mouseleave", (e) => this.handleMouseLeave(e), true);
+    this.inventoryGrid.addEventListener("mousedown", (e) => this.handleMouseDown(e), true);
+    this.inventoryGrid.addEventListener("touchstart", (e) => this.handleTouchStart(e), true);
+  }
+
+  private getSlotIndex(target: EventTarget | null): number | null {
+    if (!target) return null;
+    const slotEl = (target as HTMLElement).closest(".slot");
+    if (!slotEl) return null;
+    const index = slotEl.getAttribute("data-index");
+    return index !== null ? parseInt(index) : null;
+  }
+
+  private handleMouseEnter(e: Event) {
+    const index = this.getSlotIndex(e.target);
+    if (index === null) return;
+    
+    const slot = this.inventory.getSlot(index);
+    if (this.inventoryMenu.style.display !== "none" && slot.id !== 0) {
+      this.tooltip.innerText = BLOCK_NAMES[slot.id] || "Block";
+      this.tooltip.style.display = "block";
+    }
+  }
+
+  private handleMouseMove(e: Event) {
+    if (!(e instanceof MouseEvent)) return;
+    if (this.inventoryMenu.style.display !== "none") {
+      this.tooltip.style.left = e.clientX + 10 + "px";
+      this.tooltip.style.top = e.clientY + 10 + "px";
+    }
+  }
+
+  private handleMouseLeave(e: Event) {
+    const index = this.getSlotIndex(e.target);
+    if (index === null) return;
+    this.tooltip.style.display = "none";
+  }
+
+  private handleMouseDown(e: Event) {
+    if (!(e instanceof MouseEvent)) return;
+    const index = this.getSlotIndex(e.target);
+    if (index === null) return;
+
+    e.stopPropagation();
+    if (this.inventoryMenu.style.display !== "none") {
+      this.handleSlotClick(index, e.button);
+    }
+  }
+
+  private handleTouchStart(e: Event) {
+    if (!(e instanceof TouchEvent)) return;
+    const index = this.getSlotIndex(e.target);
+    if (index === null) return;
+
+    e.stopPropagation();
+    if (e.cancelable) e.preventDefault();
+
+    const slotEl = (e.target as HTMLElement).closest(".slot");
+    const isHotbar = slotEl?.parentElement === this.hotbarContainer;
+
+    if (this.inventoryMenu.style.display !== "none") {
+      this.touchStartSlotIndex = index;
+      this.handleSlotClick(index);
+    } else if (isHotbar) {
+      this.inventory.setSelectedSlot(index);
+      this.refresh();
+      if (this.onInventoryChange) this.onInventoryChange();
     }
   }
 
@@ -169,7 +251,7 @@ export class InventoryUI {
     });
   }
 
-  private createSlotElement(index: number, isHotbar: boolean): HTMLElement {
+  private createSlotElement(index: number, _isHotbar: boolean): HTMLElement {
     const div = document.createElement("div");
     div.classList.add("slot");
     div.setAttribute("data-index", index.toString());
@@ -188,47 +270,6 @@ export class InventoryUI {
     durability.classList.add("slot-durability");
     durability.style.display = "none";
     div.appendChild(durability);
-
-    // Events
-    div.addEventListener("mouseenter", () => {
-      const slot = this.inventory.getSlot(index);
-      if (this.inventoryMenu.style.display !== "none" && slot.id !== 0) {
-        this.tooltip.innerText = BLOCK_NAMES[slot.id] || "Block";
-        this.tooltip.style.display = "block";
-      }
-    });
-
-    div.addEventListener("mousemove", (e) => {
-      if (this.inventoryMenu.style.display !== "none") {
-        this.tooltip.style.left = e.clientX + 10 + "px";
-        this.tooltip.style.top = e.clientY + 10 + "px";
-      }
-    });
-
-    div.addEventListener("mouseleave", () => {
-      this.tooltip.style.display = "none";
-    });
-
-    div.addEventListener("mousedown", (e) => {
-      e.stopPropagation();
-      if (this.inventoryMenu.style.display !== "none") {
-        this.handleSlotClick(index, e.button);
-      }
-    });
-
-    div.addEventListener("touchstart", (e) => {
-      e.stopPropagation();
-      if (e.cancelable) e.preventDefault();
-
-      if (this.inventoryMenu.style.display !== "none") {
-        this.touchStartSlotIndex = index;
-        this.handleSlotClick(index);
-      } else if (isHotbar) {
-        this.inventory.setSelectedSlot(index);
-        this.refresh(); // Update active class
-        if (this.onInventoryChange) this.onInventoryChange();
-      }
-    });
 
     return div;
   }

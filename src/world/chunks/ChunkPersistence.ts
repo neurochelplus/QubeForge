@@ -1,4 +1,5 @@
 import { DB, worldDB } from "../../utils/DB";
+import { logger } from "../../utils/Logger";
 
 export class ChunkPersistence {
   private knownChunkKeys: Set<string> = new Set();
@@ -14,7 +15,7 @@ export class ChunkPersistence {
     await this.db.init();
     const keys = await this.db.keys("chunks");
     keys.forEach((k) => this.knownChunkKeys.add(k as string));
-    console.log(`Loaded world index. ${this.knownChunkKeys.size} chunks in DB.`);
+    logger.debug(`Loaded world index. ${this.knownChunkKeys.size} chunks in DB.`);
   }
 
   /**

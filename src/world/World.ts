@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import { BLOCK } from "../constants/Blocks";
 import { ChunkManager } from "./chunks/ChunkManager";
+import { logger } from "../utils/Logger";
+import type { SerializedInventory } from "../types/Inventory";
 
 export class World {
   private chunkManager: ChunkManager;
@@ -39,15 +41,15 @@ export class World {
     } catch (e) {
       console.warn("Failed to save dirty chunks before reinitialize:", e);
     }
-    
+
     // Очищаем только меши из памяти (НЕ удаляем данные из БД!)
     this.chunkManager.clearMemory();
-    
+
     // Закрываем старое соединение с БД
     this.close();
-    
+
     this.worldId = worldId;
-    
+
     // Создаём новый ChunkManager
     this.chunkManager = new ChunkManager(scene, undefined, dbName);
   }
@@ -73,7 +75,7 @@ export class World {
   // Persistence
   public async loadWorld(): Promise<{
     playerPosition?: THREE.Vector3;
-    inventory?: any;
+    inventory?: SerializedInventory;
   }> {
     await this.chunkManager.init();
 
@@ -82,29 +84,29 @@ export class World {
 
     if (meta?.seed !== undefined) {
       this.chunkManager.setSeed(meta.seed);
-      console.log(`Loaded seed: ${meta.seed}`);
+      logger.debug(`Loaded seed: ${meta.seed}`);
     } else {
-      console.log(`No seed found, using current: ${this.chunkManager.getSeed()}`);
+      logger.debug(`No seed found, using current: ${this.chunkManager.getSeed()}`);
     }
 
     return meta
       ? {
-          playerPosition: new THREE.Vector3(
-            meta.position.x,
-            meta.position.y,
-            meta.position.z,
-          ),
-          inventory: meta.inventory,
-        }
+        playerPosition: new THREE.Vector3(
+          meta.position.x,
+          meta.position.y,
+          meta.position.z,
+        ),
+        inventory: meta.inventory,
+      }
       : {};
   }
 
   public async saveWorld(playerData: {
     position: THREE.Vector3;
-    inventory: any;
+    inventory: SerializedInventory;
     sessionTime?: number; // Время сессии в секундах
   }) {
-    console.log("Saving world...");
+    logger.info("Saving world...");
 
     const db = this.chunkManager.getDB();
     await db.set(
@@ -122,14 +124,15 @@ export class World {
     );
 
     await this.chunkManager.saveDirtyChunks();
-    
+    await this.chunkManager.saveDirtyChunks();
+
     // Обновляем метаданные мира (lastPlayed, playtime, позиция)
     if (this.worldId) {
       try {
         const { WorldManager } = await import("./WorldManager");
         const worldManager = WorldManager.getInstance();
         const worldMeta = await worldManager.getWorld(this.worldId);
-        
+
         const updateData: any = {
           lastPlayed: Date.now(),
           playerPosition: {
@@ -138,26 +141,26 @@ export class World {
             z: playerData.position.z,
           },
         };
-        
+
         // Обновляем playtime если передано время сессии
         if (playerData.sessionTime !== undefined && worldMeta) {
           updateData.playtime = (worldMeta.playtime || 0) + playerData.sessionTime;
         }
-        
+
         await worldManager.updateWorld(this.worldId, updateData);
       } catch (e) {
         console.warn("Failed to update world metadata:", e);
       }
     }
-    
-    console.log("World saved.");
+
+    logger.info("World saved");
   }
 
   public async deleteWorld() {
-    console.log("Deleting world...");
+    logger.info("Deleting world...");
     await this.chunkManager.init();
     await this.chunkManager.clear();
-    console.log("World deleted.");
+    logger.info("World deleted");
   }
 
   /**

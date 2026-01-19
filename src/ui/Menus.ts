@@ -8,13 +8,13 @@ import { KeybindingsMenu } from "./KeybindingsMenu";
 import { AudioSettingsMenu } from "./AudioSettingsMenu";
 import { audioSystem } from "../audio";
 import { WorldSelectionUI } from "./WorldSelectionUI";
-import { 
-  initMenuElements, 
-  MenuMusic, 
-  PauseMenuController, 
+import {
+  initMenuElements,
+  MenuMusic,
+  PauseMenuController,
   GameLauncher,
-  type MenuElements 
-} from "./menus";
+  type MenuElements
+} from "./menus/index";
 
 export class Menus {
   private game: Game;
@@ -22,7 +22,7 @@ export class Menus {
   private menuMusic: MenuMusic;
   private pauseController: PauseMenuController;
   private gameLauncher: GameLauncher;
-  
+
   private keybindingsMenu: KeybindingsMenu;
   private audioSettingsMenu: AudioSettingsMenu;
   private worldSelectionUI: WorldSelectionUI;
@@ -33,7 +33,7 @@ export class Menus {
     this.menuMusic = new MenuMusic(this.elements.mainMenu);
     this.pauseController = new PauseMenuController(game, this.elements);
     this.gameLauncher = new GameLauncher(game, this.elements, this.menuMusic);
-    
+
     this.keybindingsMenu = new KeybindingsMenu();
     this.audioSettingsMenu = new AudioSettingsMenu();
     this.worldSelectionUI = new WorldSelectionUI();
@@ -62,7 +62,7 @@ export class Menus {
 
     // Main menu buttons
     this.elements.btnSingleplayer.addEventListener("click", () => this.showWorldSelection());
-    
+
     if (showMods) {
       this.elements.btnMods.addEventListener("click", () => modManagerUI.show());
     }
@@ -80,6 +80,11 @@ export class Menus {
         sessionTime,
       });
       this.game.gameState.markSaveTime();
+
+      // Cleanup resources
+      this.game.stop();
+
+      this.showMainMenu();
       this.showMainMenu();
     });
 
@@ -177,12 +182,29 @@ export class Menus {
 
   public showWorldSelection(): void {
     this.elements.mainMenu.style.display = "none";
-    
+
     this.worldSelectionUI.show(
       (worldId) => this.gameLauncher.launch(worldId),
       () => {
         this.elements.mainMenu.style.display = "flex";
       }
     );
+  }
+
+  public toggleInventory(showTable: boolean): void {
+    if (this.elements.inventoryMenu.style.display === "flex") {
+      this.elements.inventoryMenu.style.display = "none";
+      this.elements.uiContainer.style.display = "block";
+      this.elements.crosshair.style.display = "block";
+      this.game.renderer.controls.lock();
+      this.game.craftingUI.setVisible(false, false);
+    } else {
+      this.elements.inventoryMenu.style.display = "flex";
+      this.elements.uiContainer.style.display = "none";
+      this.elements.crosshair.style.display = "none";
+      this.game.renderer.controls.unlock();
+      this.game.craftingUI.setVisible(true, showTable);
+    }
+    this.game.inventoryUI.refresh();
   }
 }

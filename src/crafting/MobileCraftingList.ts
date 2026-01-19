@@ -4,6 +4,7 @@ import { InventoryUI } from "../inventory/InventoryUI";
 import { TOOL_TEXTURES } from "../constants/ToolTextures";
 import { getBlockColor } from "../utils/BlockColors";
 import { RECIPES } from "./Recipes";
+import type { CraftingRecipe, RecipeIngredient } from "../types/Recipes";
 
 export class MobileCraftingList {
   private craftingSystem: CraftingSystem;
@@ -68,7 +69,7 @@ export class MobileCraftingList {
     return map;
   }
 
-  private shouldShowRecipe(recipe: any): boolean {
+  private shouldShowRecipe(recipe: CraftingRecipe): boolean {
     if (this.craftingSystem.isCraftingTable) return true;
 
     let needs3x3 = false;
@@ -78,18 +79,18 @@ export class MobileCraftingList {
       }
     } else if (recipe.ingredients) {
       let totalIngredients = 0;
-      recipe.ingredients.forEach((i: any) => (totalIngredients += i.count));
+      recipe.ingredients.forEach((i: RecipeIngredient) => (totalIngredients += i.count));
       if (totalIngredients > 4) needs3x3 = true;
     }
 
     return !needs3x3;
   }
 
-  private getRecipeRequirements(recipe: any): Map<number, number> {
+  private getRecipeRequirements(recipe: CraftingRecipe): Map<number, number> {
     const reqMap = new Map<number, number>();
 
     if (recipe.ingredients) {
-      recipe.ingredients.forEach((i: any) =>
+      recipe.ingredients.forEach((i: RecipeIngredient) =>
         reqMap.set(i.id, (reqMap.get(i.id) || 0) + i.count),
       );
     } else if (recipe.pattern && recipe.keys) {
@@ -118,7 +119,7 @@ export class MobileCraftingList {
   }
 
   private createRecipeButton(
-    recipe: any,
+    recipe: CraftingRecipe,
     reqMap: Map<number, number>,
   ): HTMLElement {
     const btn = document.createElement("div");
@@ -190,7 +191,7 @@ export class MobileCraftingList {
     }
   }
 
-  private handleCraft(recipe: any, reqMap: Map<number, number>) {
+  private handleCraft(recipe: CraftingRecipe, reqMap: Map<number, number>) {
     const currentInvMap = this.getInventoryMap();
     if (!this.canCraftRecipe(reqMap, currentInvMap)) return;
 

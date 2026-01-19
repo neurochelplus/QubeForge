@@ -7,7 +7,7 @@ export class BlockCursor {
   private raycaster: THREE.Raycaster;
   private camera: PerspectiveCamera;
   private scene: Scene;
-  private controls: any; // PointerLockControls
+  private controls: PointerLockControls; // PointerLockControls
   private readonly MAX_DISTANCE = 6;
 
   // Cached vectors to avoid allocation in hot path
@@ -17,7 +17,7 @@ export class BlockCursor {
   constructor(
     scene: Scene,
     camera: PerspectiveCamera,
-    controls: any
+    controls: PointerLockControls
   ) {
     this.camera = camera;
     this.scene = scene;

@@ -11,35 +11,61 @@ import { KeybindingsManager } from "./KeybindingsManager";
  */
 export class KeyboardHandler {
   private keybindings: KeybindingsManager;
+  private gameState: GameState;
+  private player: Player;
+  private inventory: Inventory;
+  private inventoryUI: InventoryUI;
+  private cli: CLI;
+  private onToggleInventory: (useCraftingTable: boolean) => void;
+  private onShowPauseMenu: () => void;
+  private onHotbarChange: () => void;
+
+  private keyDownHandler = (e: KeyboardEvent) => this.onKeyDown(e);
+  private keyUpHandler = (e: KeyboardEvent) => this.onKeyUp(e);
+  private contextMenuHandler = (e: Event) => e.preventDefault();
+  private hotbarKeyHandler = (event: KeyboardEvent) => {
+    const key = parseInt(event.key);
+    if (key >= 1 && key <= 9) {
+      this.inventory.setSelectedSlot(key - 1);
+      this.inventoryUI.refresh();
+      this.onHotbarChange();
+    }
+  };
 
   constructor(
-    private gameState: GameState,
-    private player: Player,
-    private inventory: Inventory,
-    private inventoryUI: InventoryUI,
-    private cli: CLI,
-    private onToggleInventory: (useCraftingTable: boolean) => void,
-    private onShowPauseMenu: () => void,
-    private onHotbarChange: () => void,
+    gameState: GameState,
+    player: Player,
+    inventory: Inventory,
+    inventoryUI: InventoryUI,
+    cli: CLI,
+    onToggleInventory: (useCraftingTable: boolean) => void,
+    onShowPauseMenu: () => void,
+    onHotbarChange: () => void,
   ) {
     this.keybindings = KeybindingsManager.getInstance();
+    this.gameState = gameState;
+    this.player = player;
+    this.inventory = inventory;
+    this.inventoryUI = inventoryUI;
+    this.cli = cli;
+    this.onToggleInventory = onToggleInventory;
+    this.onShowPauseMenu = onShowPauseMenu;
+    this.onHotbarChange = onHotbarChange;
     this.init();
   }
 
   private init(): void {
-    document.addEventListener("keydown", (e) => this.onKeyDown(e));
-    document.addEventListener("keyup", (e) => this.onKeyUp(e));
-    document.addEventListener("contextmenu", (e) => e.preventDefault());
+    document.addEventListener("keydown", this.keyDownHandler);
+    document.addEventListener("keyup", this.keyUpHandler);
+    document.addEventListener("contextmenu", this.contextMenuHandler);
+    window.addEventListener("keydown", this.hotbarKeyHandler);
+  }
 
-    // Hotbar number keys (1-9 остаются хардкодом - это стандарт)
-    window.addEventListener("keydown", (event) => {
-      const key = parseInt(event.key);
-      if (key >= 1 && key <= 9) {
-        this.inventory.setSelectedSlot(key - 1);
-        this.inventoryUI.refresh();
-        this.onHotbarChange();
-      }
-    });
+  public cleanup(): void {
+    document.removeEventListener("keydown", this.keyDownHandler);
+    document.removeEventListener("keyup", this.keyUpHandler);
+    document.removeEventListener("contextmenu", this.contextMenuHandler);
+    window.removeEventListener("keydown", this.hotbarKeyHandler);
   }
 
   private onKeyDown(event: KeyboardEvent): void {

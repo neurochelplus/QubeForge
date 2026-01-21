@@ -157,15 +157,12 @@ export class Game {
     this.gameLoop.start();
   }
 
+  public startGameLoop(): void {
+    this.gameLoop.start();
+  }
+
   public stop(): void {
     this.gameLoop.stop();
-
-    // Cleanup input handlers
-    if (this.inputHandlers) {
-      this.inputHandlers.keyboard.cleanup();
-      this.inputHandlers.mouse.cleanup();
-      this.inputHandlers.pointerLock.cleanup();
-    }
 
     // Stop auto-save
     if (this.autoSave) {

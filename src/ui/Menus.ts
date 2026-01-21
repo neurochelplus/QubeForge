@@ -85,7 +85,6 @@ export class Menus {
       this.game.stop();
 
       this.showMainMenu();
-      this.showMainMenu();
     });
 
     // Settings buttons

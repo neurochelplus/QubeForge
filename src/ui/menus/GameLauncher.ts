@@ -27,7 +27,7 @@ export class GameLauncher {
       const { WorldManager } = await import("../../world/WorldManager");
       const worldManager = WorldManager.getInstance();
       const dbName = worldManager.getWorldDBName(worldId);
-      
+
       await this.game.world.reinitialize(this.game.renderer.scene, worldId, dbName);
 
       const worldMeta = await worldManager.getWorld(worldId);
@@ -76,7 +76,7 @@ export class GameLauncher {
 
     this.game.inventory.clear();
     this.game.inventoryUI.refresh();
-    
+
     // Сохраняем начальное состояние чтобы мир не считался "новым" при следующем входе
     await this.game.world.saveWorld({
       position: this.game.renderer.controls.object.position,
@@ -87,14 +87,14 @@ export class GameLauncher {
 
   private async loadExistingWorld(): Promise<void> {
     const data = await this.game.world.loadWorld();
-    
+
     if (data.playerPosition) {
       const safePos = data.playerPosition.clone();
       safePos.y += 0.1;
       this.game.renderer.controls.object.position.copy(safePos);
       this.game.player.physics.setVelocity({ x: 0, y: 0, z: 0 } as any);
     }
-    
+
     if (data.inventory) {
       this.game.inventory.deserialize(data.inventory);
       this.game.inventoryUI.refresh();
@@ -105,6 +105,7 @@ export class GameLauncher {
     this.game.gameState.setGameStarted(true);
     this.game.gameState.setPaused(false);
     this.game.resetTime();
+    this.game.startGameLoop();
 
     this.elements.mainMenu.style.display = "none";
     this.elements.pauseMenu.style.display = "none";
@@ -116,7 +117,7 @@ export class GameLauncher {
 
     if (this.elements.mobileUi && this.game.renderer.getIsMobile()) {
       this.elements.mobileUi.style.display = "block";
-      document.documentElement.requestFullscreen().catch(() => {});
+      document.documentElement.requestFullscreen().catch(() => { });
     }
   }
 }

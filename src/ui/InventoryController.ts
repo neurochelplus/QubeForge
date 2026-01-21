@@ -24,7 +24,7 @@ export class InventoryController {
     private craftingUI: CraftingUI,
     private furnaceUI: FurnaceUI,
     private isMobile: boolean,
-  ) {}
+  ) { }
 
   /**
    * Toggle inventory menu
@@ -46,6 +46,7 @@ export class InventoryController {
       const useCraftingTable = param === true;
       const useFurnace = param === "furnace";
 
+      inventoryMenu.style.display = "flex";
       this.controls.unlock();
 
       // Stop Movement
@@ -55,7 +56,6 @@ export class InventoryController {
       this.player.physics.moveRight = false;
       this.player.physics.isSprinting = false;
 
-      inventoryMenu.style.display = "flex";
       crosshair.style.display = "none";
 
       if (useFurnace && furnacePos) {
@@ -118,8 +118,8 @@ export class InventoryController {
         document.getElementById("mobile-actions")!.style.display = "flex";
       }
 
-      this.controls.lock();
       inventoryMenu.style.display = "none";
+      this.controls.lock();
       crosshair.style.display = "block";
 
       // Return dragged item to inventory

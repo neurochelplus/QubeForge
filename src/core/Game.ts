@@ -23,10 +23,11 @@ import { Menus } from "../ui/Menus";
 import { createDevTools, DevTools } from "../utils/DevTools";
 import { createProfiler, PerformanceProfiler } from "../utils/PerformanceProfiler";
 import { modLoader } from "../modding";
-import { AutoSave } from "../ui/AutoSave";
-import { KeyboardHandler } from "../input/KeyboardHandler";
-import { MouseHandler } from "../input/MouseHandler";
-import { PointerLockHandler } from "../input/PointerLockHandler";
+import type { AutoSave } from "../ui/AutoSave";
+import type { KeyboardHandler } from "../input/KeyboardHandler";
+import type { MouseHandler } from "../input/MouseHandler";
+import type { PointerLockHandler } from "../input/PointerLockHandler";
+
 import { logger } from "../utils/Logger";
 import { GameLoop, ToolDurability } from "./game/index";
 
@@ -129,46 +130,7 @@ export class Game {
     this.devTools = createDevTools();
     this.profiler = createProfiler();
 
-    // AutoSave & Input (Merged from Main)
-    this.autoSave = new AutoSave(
-      this.gameState,
-      this.world,
-      this.renderer.controls,
-      this.inventory
-    );
 
-    this.inputHandlers = {
-      keyboard: new KeyboardHandler(
-        this.gameState,
-        this.player,
-        this.inventory,
-        this.inventoryUI,
-        this.cli,
-        (val) => this.menus.toggleInventory(val),
-        () => this.menus.togglePauseMenu(),
-        () => this.inventoryUI.refresh()
-      ),
-      mouse: new MouseHandler(
-        this.gameState,
-        this.player,
-        this.blockBreaking,
-        this.blockInteraction,
-        this.world,
-        this.inventory,
-        this.inventoryUI,
-        this.renderer.controls,
-        this.renderer.getIsMobile(),
-        () => this.inventoryUI.refresh() // onHotbarChange
-      ),
-      pointerLock: new PointerLockHandler(
-        this.renderer.controls,
-        this.gameState,
-        () => this.menus.toggleInventory(false),
-        () => this.menus.hidePauseMenu(),
-        () => this.menus.showPauseMenu(),
-        () => this.cli.isOpen
-      )
-    };
 
     // Mods
     this.initMods();

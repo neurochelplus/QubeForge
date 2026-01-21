@@ -116,13 +116,30 @@ export class FurnaceUI {
 
   public updateVisuals() {
     if (!this.isOpen || !this.currentFurnacePos) return;
-    const furnace = this.furnaceManager.getFurnace(
+    let furnace = this.furnaceManager.getFurnace(
       this.currentFurnacePos.x,
       this.currentFurnacePos.y,
       this.currentFurnacePos.z,
     );
 
+    // Если печь не найдена в менеджере, создаём новую запись
+    // Это может произойти если данные были повреждены или печь загружена из старого мира
     if (!furnace) {
+      this.furnaceManager.createFurnace(
+        this.currentFurnacePos.x,
+        this.currentFurnacePos.y,
+        this.currentFurnacePos.z,
+        0, // Дефолтная ротация
+      );
+      furnace = this.furnaceManager.getFurnace(
+        this.currentFurnacePos.x,
+        this.currentFurnacePos.y,
+        this.currentFurnacePos.z,
+      );
+    }
+
+    if (!furnace) {
+      // Это не должно произойти после createFurnace, но на всякий случай
       this.close();
       return;
     }
@@ -142,9 +159,8 @@ export class FurnaceUI {
     // Arrow (Width/Color)
     const cookRatio =
       furnace.totalCookTime > 0 ? furnace.cookTime / furnace.totalCookTime : 0;
-    this.arrowIcon.style.background = `linear-gradient(to right, #fff ${
-      cookRatio * 100
-    }%, #555 ${cookRatio * 100}%)`;
+    this.arrowIcon.style.background = `linear-gradient(to right, #fff ${cookRatio * 100
+      }%, #555 ${cookRatio * 100}%)`;
     // Clip text to background if needed, or just use overlay
     this.arrowIcon.style.webkitBackgroundClip = "text";
     this.arrowIcon.style.color = "transparent";

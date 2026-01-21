@@ -1,5 +1,5 @@
 import type { InventorySlot } from "../inventory/Inventory";
-import { worldDB } from "../utils/DB";
+import { DB, worldDB } from "../utils/DB";
 import { SMELTING_RECIPES, FUEL_ITEMS } from "./Recipes";
 import { logger } from "../utils/Logger";
 
@@ -21,8 +21,9 @@ export class FurnaceManager {
   private static instance: FurnaceManager;
   private furnaces: Map<string, FurnaceData> = new Map();
   private dirty: boolean = false;
+  private db: DB = worldDB; // По умолчанию используется глобальная БД
 
-  private constructor() {}
+  private constructor() { }
 
   public static getInstance(): FurnaceManager {
     if (!FurnaceManager.instance) {
@@ -33,6 +34,23 @@ export class FurnaceManager {
 
   public getFurnace(x: number, y: number, z: number): FurnaceData | undefined {
     return this.furnaces.get(`${x},${y},${z}`);
+  }
+
+  /**
+   * Установить базу данных для сохранения печей
+   * Вызывается при загрузке мира
+   */
+  public setDB(db: DB): void {
+    this.db = db;
+    logger.debug(`FurnaceManager: Using database ${db.getDbName()}`);
+  }
+
+  /**
+   * Очистить все печи (при переключении миров)
+   */
+  public clear(): void {
+    this.furnaces.clear();
+    this.dirty = false;
   }
 
   // Проверяет целостность данных печи (защита от поврежденных данных из IndexedDB)
@@ -80,7 +98,7 @@ export class FurnaceManager {
 
     this.furnaces.delete(key);
     this.dirty = true;
-    worldDB.delete(key, "blockEntities");
+    this.db.delete(key, "blockEntities");
 
     return drops;
   }
@@ -187,24 +205,27 @@ export class FurnaceManager {
     if (!this.dirty) return; // Нет изменений - не сохраняем
     const promises: Promise<void>[] = [];
     this.furnaces.forEach((data, key) => {
-      promises.push(worldDB.set(key, data, "blockEntities"));
+      promises.push(this.db.set(key, data, "blockEntities"));
     });
     await Promise.all(promises);
     this.dirty = false;
+    logger.debug(`Saved ${this.furnaces.size} furnaces to ${this.db.getDbName()}`);
   }
 
   // Загрузка всех печей из IndexedDB при старте игры
   public async load() {
     try {
-      await worldDB.init(); // Убеждаемся, что БД открыта
-      const keys = await worldDB.keys("blockEntities");
+      // Очищаем старые печи перед загрузкой (важно при переключении миров)
+      this.furnaces.clear();
+
+      const keys = await this.db.keys("blockEntities");
       for (const key of keys) {
-        const data = await worldDB.get(key as string, "blockEntities");
+        const data = await this.db.get(key as string, "blockEntities");
         if (data) {
           this.furnaces.set(key as string, data);
         }
       }
-      logger.debug(`Loaded ${this.furnaces.size} furnaces.`);
+      logger.debug(`Loaded ${this.furnaces.size} furnaces from ${this.db.getDbName()}`);
     } catch (e) {
       console.warn("Failed to load block entities", e);
     }

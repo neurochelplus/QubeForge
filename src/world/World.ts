@@ -66,6 +66,13 @@ export class World {
   }
 
   /**
+   * Получить экземпляр БД для работы с данными мира
+   */
+  public getDB() {
+    return this.chunkManager.getDB();
+  }
+
+  /**
    * Установить seed мира
    */
   public setSeed(seed: number): void {

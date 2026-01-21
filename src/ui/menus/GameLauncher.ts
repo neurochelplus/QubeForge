@@ -55,6 +55,12 @@ export class GameLauncher {
     await this.game.world.deleteWorld();
     this.game.player.health.respawn();
 
+    // Настраиваем FurnaceManager для нового мира
+    const { FurnaceManager } = await import("../../crafting/FurnaceManager");
+    const furnaceManager = FurnaceManager.getInstance();
+    furnaceManager.clear(); // Очищаем печи от предыдущего мира
+    furnaceManager.setDB(this.game.world.getDB());
+
     if (worldMeta?.seed) {
       this.game.world.setSeed(worldMeta.seed);
     }
@@ -99,6 +105,12 @@ export class GameLauncher {
       this.game.inventory.deserialize(data.inventory);
       this.game.inventoryUI.refresh();
     }
+
+    // Загружаем печи с БД текущего мира
+    const { FurnaceManager } = await import("../../crafting/FurnaceManager");
+    const furnaceManager = FurnaceManager.getInstance();
+    furnaceManager.setDB(this.game.world.getDB());
+    await furnaceManager.load();
   }
 
   private showGameUI(): void {

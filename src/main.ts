@@ -179,8 +179,10 @@ async function initializeGame() {
       systems.inventoryUI.refresh();
     }
 
-    // Load Furnaces
-    await FurnaceManager.getInstance().load();
+    // Load Furnaces - используем БД текущего мира
+    const furnaceManager = FurnaceManager.getInstance();
+    furnaceManager.setDB(systems.world.getDB());
+    await furnaceManager.load();
 
     // Ensure starting chunk is loaded
     const cx = Math.floor(systems.controls.object.position.x / 32);

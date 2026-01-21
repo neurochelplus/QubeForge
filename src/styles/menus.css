@@ -36,6 +36,41 @@
     align-items: center;
 }
 
+#pause-menu-container,
+#settings-menu-container,
+#keybindings-menu-container {
+    max-height: 90vh;
+    /* Prevent vertical overflow */
+    overflow-y: auto;
+    /* Enable scrolling */
+}
+
+/* Scrollbar for menus */
+#pause-menu-container::-webkit-scrollbar,
+#settings-menu-container::-webkit-scrollbar,
+#keybindings-menu-container::-webkit-scrollbar,
+#keybindings-list::-webkit-scrollbar,
+#audio-sliders-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+#pause-menu-container::-webkit-scrollbar-track,
+#settings-menu-container::-webkit-scrollbar-track,
+#keybindings-menu-container::-webkit-scrollbar-track,
+#keybindings-list::-webkit-scrollbar-track,
+#audio-sliders-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+#pause-menu-container::-webkit-scrollbar-thumb,
+#settings-menu-container::-webkit-scrollbar-thumb,
+#keybindings-menu-container::-webkit-scrollbar-thumb,
+#keybindings-list::-webkit-scrollbar-thumb,
+#audio-sliders-list::-webkit-scrollbar-thumb {
+    background: #455a64;
+    border-radius: 4px;
+}
+
 /* Main Menu Layout */
 #main-menu {
     display: block;
@@ -203,8 +238,13 @@
 }
 
 @keyframes pulse {
-    from { opacity: 1; }
-    to { opacity: 0.6; }
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0.6;
+    }
 }
 
 #keybindings-buttons {
@@ -217,4 +257,59 @@
 #keybindings-buttons .menu-btn {
     width: auto;
     min-width: 120px;
+}
+
+/* Landscape Mode Adjustments */
+@media (max-height: 600px) {
+    #game-logo {
+        height: 10vh;
+        top: 5%;
+    }
+
+    #main-menu-buttons {
+        bottom: 5%;
+        right: 5%;
+    }
+
+    .menu-btn {
+        padding: 1vh 1vw;
+        /* Smaller padding */
+        font-size: clamp(10px, 1.5vh, 16px);
+        margin: 5px 0;
+        min-height: 30px;
+        box-shadow:
+            0 0.4vh 0 #263238,
+            0 0.6vh 1vh rgba(0, 0, 0, 0.4);
+    }
+
+    .menu-btn:hover {
+        transform: translateY(-0.1vh);
+        box-shadow:
+            0 0.5vh 0 #bf360c,
+            0 0.8vh 1.5vh rgba(0, 0, 0, 0.5);
+    }
+
+    .menu-btn:active {
+        transform: translateY(0.3vh);
+        box-shadow:
+            0 0.1vh 0 #bf360c,
+            0 0.2vh 0.5vh rgba(0, 0, 0, 0.4);
+    }
+
+    .setting-item {
+        margin: 8px;
+        font-size: 16px;
+    }
+
+    #pause-menu-container,
+    #settings-menu-container,
+    #keybindings-menu-container {
+        padding: 10px;
+        width: 70vw;
+    }
+
+    h2 {
+        font-size: 20px !important;
+        margin-bottom: 10px !important;
+    }
 }

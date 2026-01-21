@@ -25,7 +25,7 @@ async function initializeGame() {
   // Initialize WorldManager and run migration
   const worldManager = WorldManager.getInstance();
   await worldManager.init();
-  
+
   // Migrate old world data if exists
   try {
     await WorldMigration.migrate();
@@ -36,7 +36,7 @@ async function initializeGame() {
   // Initialize Tool Textures
   initToolTextures();
 
-// Generate CSS Noise Texture
+  // Generate CSS Noise Texture
   NoiseGenerator.generate();
 
   // Initialize all game systems

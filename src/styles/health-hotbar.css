@@ -109,13 +109,11 @@
 }
 
 .block-icon.item-stick {
-    background-image: linear-gradient(
-        45deg,
-        transparent 40%,
-        #654321 40%,
-        #654321 60%,
-        transparent 60%
-    );
+    background-image: linear-gradient(45deg,
+            transparent 40%,
+            #654321 40%,
+            #654321 60%,
+            transparent 60%);
     background-blend-mode: normal;
     box-shadow: none;
 }
@@ -123,13 +121,11 @@
 .block-icon.item-planks {
     background-image:
         var(--noise-url),
-        repeating-linear-gradient(
-            0deg,
+        repeating-linear-gradient(0deg,
             transparent,
             transparent 20%,
             rgba(0, 0, 0, 0.3) 20%,
-            rgba(0, 0, 0, 0.3) 25%
-        );
+            rgba(0, 0, 0, 0.3) 25%);
     background-blend-mode: overlay, normal;
 }
 
@@ -137,4 +133,46 @@
     background-color: transparent !important;
     background-blend-mode: normal;
     box-shadow: none;
+}
+
+/* Landscape Mode Adjustments for HUD */
+@media (max-height: 500px) {
+    #ui-container {
+        bottom: 0px;
+        /* Bring closer to bottom */
+        width: 60%;
+        /* Limit width to avoid corners where controls are */
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    #health-bar {
+        margin-bottom: 5px;
+        /* Reduce gap */
+    }
+
+    #hotbar-label {
+        margin-bottom: 2px;
+        font-size: 14px;
+    }
+
+    #hotbar {
+        padding: 2px;
+    }
+
+    .slot {
+        width: 32px;
+        height: 32px;
+    }
+
+    /* Make block icons smaller too */
+    .block-icon {
+        width: 20px;
+        height: 20px;
+    }
+
+    .hp-unit {
+        width: 8px;
+        height: 8px;
+    }
 }

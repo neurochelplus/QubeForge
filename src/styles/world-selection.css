@@ -371,6 +371,7 @@
 
 /* Mobile Responsive */
 @media (max-width: 600px) {
+
   #world-selection-menu h2,
   #world-creation-dialog h2 {
     font-size: 16px;
@@ -409,5 +410,67 @@
   .dialog-buttons .menu-btn {
     width: 100%;
     min-width: unset;
+  }
+}
+
+/* Landscape Mode Adjustments for World Menu */
+@media (max-height: 600px) {
+
+  #world-selection-menu h2,
+  #world-creation-dialog h2 {
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+
+  #worlds-list {
+    max-height: 50vh;
+    margin-bottom: 10px;
+  }
+
+  .creation-form {
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 15px;
+  }
+
+  .form-group {
+    margin-bottom: 10px;
+  }
+
+  .form-group label {
+    margin-bottom: 4px;
+    font-size: 10px;
+  }
+
+  .form-group input,
+  .form-group select {
+    padding: 8px;
+    font-size: 14px;
+    border-width: 2px;
+  }
+
+  .dialog-buttons,
+  #world-selection-buttons {
+    margin-top: 10px;
+  }
+
+  .menu-btn {
+    padding: 8px 12px;
+    /* Smaller button padding */
+    font-size: 12px;
+  }
+
+  /* Scrollbar for creation form */
+  .creation-form::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .creation-form::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  .creation-form::-webkit-scrollbar-thumb {
+    background: #546e7a;
+    border-radius: 4px;
   }
 }

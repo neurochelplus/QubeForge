@@ -147,6 +147,49 @@
     background: rgba(0, 0, 0, 0.2);
 }
 
+/* Landscape Mode for Crafting/Furnace */
+@media (max-height: 500px) {
+
+    #crafting-area,
+    .furnace-container {
+        padding: 5px;
+        margin-bottom: 5px;
+        gap: 8px;
+    }
+
+    /* Make slots smaller */
+    #crafting-grid-container {
+        grid-template-columns: repeat(2, 32px);
+        grid-template-rows: repeat(2, 32px);
+    }
+
+    #crafting-grid-container.grid-3x3 {
+        grid-template-columns: repeat(3, 32px);
+        grid-template-rows: repeat(3, 32px);
+    }
+
+    #furnace-slot-input,
+    #furnace-slot-fuel,
+    #furnace-slot-output {
+        width: 32px;
+        height: 32px;
+    }
+
+    .furnace-arrow {
+        font-size: 18px;
+        width: 20px;
+    }
+
+    .furnace-flame-container {
+        height: 12px;
+        width: 12px;
+    }
+
+    .crafting-arrow {
+        font-size: 18px;
+    }
+}
+
 .furnace-flame {
     width: 100%;
     background-color: #ff6f00;

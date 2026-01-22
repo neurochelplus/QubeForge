@@ -81,8 +81,9 @@ export class GameInitializer {
         if (id === BLOCK.FURNACE) {
           const drops = FurnaceManager.getInstance().removeFurnace(x, y, z);
           drops.forEach((d) => {
-            // Используем TOOL_TEXTURES если доступна текстура
-            const toolTexture = TOOL_TEXTURES[d.id]?.texture || null;
+            // Блоки отображаются как 3D кубики, предметы/инструменты - как плоские иконки
+            const isPlaceable = BlockRegistry.canPlaceAsBlock(d.id);
+            const toolTexture = isPlaceable ? null : (TOOL_TEXTURES[d.id]?.texture || null);
             
             entities.push(
               new ItemEntity(
@@ -106,8 +107,9 @@ export class GameInitializer {
           const { shouldDrop, dropId } = BlockDropHandler.getDropInfo(id, toolId);
 
           if (shouldDrop) {
-            // Используем TOOL_TEXTURES если доступна текстура
-            const toolTexture = TOOL_TEXTURES[dropId]?.texture || null;
+            // Блоки отображаются как 3D кубики, предметы/инструменты - как плоские иконки
+            const isPlaceable = BlockRegistry.canPlaceAsBlock(dropId);
+            const toolTexture = isPlaceable ? null : (TOOL_TEXTURES[dropId]?.texture || null);
             
             entities.push(
               new ItemEntity(
@@ -118,7 +120,7 @@ export class GameInitializer {
                 z,
                 dropId,
                 world.noiseTexture,
-                dropId === 14 ? null : toolTexture,
+                toolTexture,
               ),
             );
           }

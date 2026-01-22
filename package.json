@@ -8,13 +8,16 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest --run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "audit": "tsx src/audit/audit-runner.ts"
   },
   "devDependencies": {
     "@vitest/ui": "^4.0.16",
     "fast-check": "^4.5.3",
     "jsdom": "^27.4.0",
+    "tsx": "^4.21.0",
     "typescript": "~5.9.3",
+    "typhonjs-escomplex": "^0.1.0",
     "vite": "^7.2.4",
     "vitest": "^4.0.16"
   },

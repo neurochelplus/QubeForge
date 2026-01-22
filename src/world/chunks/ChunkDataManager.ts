@@ -1,5 +1,6 @@
 import { BLOCK } from "../../constants/Blocks";
 import { TerrainGenerator } from "../generation/TerrainGenerator";
+import { getBlockIndex } from "../../utils/ChunkUtils";
 
 /**
  * Управление данными чанков (блоки, топология)
@@ -69,7 +70,7 @@ export class ChunkDataManager {
     const localX = x - cx * this.chunkSize;
     const localZ = z - cz * this.chunkSize;
 
-    const index = this.getBlockIndex(localX, y, localZ);
+    const index = getBlockIndex(localX, y, localZ, this.chunkSize, this.chunkHeight);
     return data[index];
   }
 
@@ -89,7 +90,7 @@ export class ChunkDataManager {
 
     if (y < 0 || y >= this.chunkHeight) return;
 
-    const index = this.getBlockIndex(localX, y, localZ);
+    const index = getBlockIndex(localX, y, localZ, this.chunkSize, this.chunkHeight);
     data[index] = type;
     this.dirtyChunks.add(key);
   }
@@ -116,7 +117,7 @@ export class ChunkDataManager {
     const localZ = worldZ - cz * this.chunkSize;
 
     for (let y = this.chunkHeight - 1; y >= 0; y--) {
-      const index = this.getBlockIndex(localX, y, localZ);
+      const index = getBlockIndex(localX, y, localZ, this.chunkSize, this.chunkHeight);
       if (data[index] !== BLOCK.AIR) {
         return y;
       }
@@ -161,9 +162,5 @@ export class ChunkDataManager {
   public clear(): void {
     this.chunksData.clear();
     this.dirtyChunks.clear();
-  }
-
-  private getBlockIndex(x: number, y: number, z: number): number {
-    return x + y * this.chunkSize + z * this.chunkSize * this.chunkHeight;
   }
 }

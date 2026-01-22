@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { BLOCK } from "../constants/Blocks";
+import { WORLD_GENERATION } from "../constants/WorldConstants";
 import { ChunkManager } from "./chunks/ChunkManager";
 import { logger } from "../utils/Logger";
 import type { SerializedInventory } from "../types/Inventory";
@@ -10,7 +11,12 @@ export class World {
 
   constructor(scene: THREE.Scene, worldId?: string, dbName?: string) {
     this.worldId = worldId || null;
-    this.chunkManager = new ChunkManager(scene, undefined, dbName);
+    this.chunkManager = new ChunkManager(
+      scene,
+      undefined,
+      dbName,
+      WORLD_GENERATION.USE_WEB_WORKERS
+    );
   }
 
   /**
@@ -51,7 +57,12 @@ export class World {
     this.worldId = worldId;
 
     // Создаём новый ChunkManager
-    this.chunkManager = new ChunkManager(scene, undefined, dbName);
+    this.chunkManager = new ChunkManager(
+      scene,
+      undefined,
+      dbName,
+      WORLD_GENERATION.USE_WEB_WORKERS
+    );
   }
 
   public get noiseTexture(): THREE.DataTexture {

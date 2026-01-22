@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { ChunkLoader } from "./ChunkLoader";
 import { ChunkVisibility } from "./ChunkVisibility";
 import { logger } from "../../utils/Logger";
+import { WORLD_GENERATION } from "../../constants/WorldConstants";
 
 // Глобальный доступ к профайлеру (если есть)
 declare global {
@@ -18,15 +19,15 @@ declare global {
  * Координирует загрузку, выгрузку и видимость чанков
  */
 export class ChunkManager {
-  private chunkSize: number = 32;
-  private chunkHeight: number = 128;
+  private chunkSize: number = WORLD_GENERATION.CHUNK_SIZE;
+  private chunkHeight: number = WORLD_GENERATION.CHUNK_HEIGHT;
 
   private loader: ChunkLoader;
   private visibility: ChunkVisibility;
 
   // Throttling: обновлять чанки не каждый кадр
   private updateCounter: number = 0;
-  private readonly UPDATE_INTERVAL: number = 3; // Каждые 3 кадра
+  private readonly UPDATE_INTERVAL: number = WORLD_GENERATION.UPDATE_INTERVAL;
 
   // Кэш позиции игрока для определения движения
   private lastPlayerChunkX: number = -Infinity;
@@ -37,8 +38,8 @@ export class ChunkManager {
   private readonly chunkRadius: number;
   private readonly memoryCleanupChance: number;
 
-  constructor(scene: THREE.Scene, seed?: number, dbName?: string) {
-    this.loader = new ChunkLoader(scene, this.chunkSize, this.chunkHeight, seed, dbName);
+  constructor(scene: THREE.Scene, seed?: number, dbName?: string, useWorkers: boolean = true) {
+    this.loader = new ChunkLoader(scene, this.chunkSize, this.chunkHeight, seed, dbName, useWorkers);
     this.visibility = new ChunkVisibility(this.chunkSize, this.chunkHeight);
 
     // Кэшируем isMobile один раз при создании
@@ -46,8 +47,10 @@ export class ChunkManager {
       navigator.userAgent,
     ) || (navigator.maxTouchPoints > 0 && window.innerWidth < 1024);
 
-    this.chunkRadius = 2; // Уменьшен с 3 до 2 для лучшей производительности
-    this.memoryCleanupChance = this.isMobile ? 0.02 : 0.005;
+    this.chunkRadius = WORLD_GENERATION.CHUNK_RADIUS;
+    this.memoryCleanupChance = this.isMobile 
+      ? WORLD_GENERATION.MEMORY_CLEANUP_CHANCE_MOBILE 
+      : WORLD_GENERATION.MEMORY_CLEANUP_CHANCE_DESKTOP;
   }
 
   public async init(): Promise<void> {

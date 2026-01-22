@@ -6,6 +6,7 @@ import { ChunkGenerationQueue } from "./ChunkGenerationQueue";
 import { ChunkDataManager } from "./ChunkDataManager";
 import { ChunkMeshManager } from "./ChunkMeshManager";
 import type { ChunkMesh } from "./ChunkMeshManager";
+import { getBlockIndex, createBlockIndexGetter } from "../../utils/ChunkUtils";
 
 /**
  * Фасад для управления загрузкой, генерацией и выгрузкой чанков
@@ -34,6 +35,7 @@ export class ChunkLoader {
     chunkHeight: number,
     seed?: number,
     dbName?: string,
+    useWorkers: boolean = true,
   ) {
     this.chunkSize = chunkSize;
     this.chunkHeight = chunkHeight;
@@ -48,6 +50,7 @@ export class ChunkLoader {
       this.persistence,
       chunkSize,
       chunkHeight,
+      useWorkers,
     );
 
     this.dataManager = new ChunkDataManager(
@@ -83,6 +86,7 @@ export class ChunkLoader {
 
   public setSeed(seed: number): void {
     this.terrainGen.setSeed(seed);
+    this.generationQueue.setSeed(seed);
   }
 
   public getNoiseTexture(): THREE.DataTexture {
@@ -108,7 +112,7 @@ export class ChunkLoader {
         cx,
         cz,
         data,
-        this.getBlockIndex.bind(this),
+        (x, y, z) => getBlockIndex(x, y, z, this.chunkSize, this.chunkHeight),
         this.getBlock.bind(this),
       );
       return;
@@ -129,7 +133,7 @@ export class ChunkLoader {
         cx,
         cz,
         data,
-        this.getBlockIndex.bind(this),
+        (x, y, z) => getBlockIndex(x, y, z, this.chunkSize, this.chunkHeight),
         this.getBlock.bind(this),
       );
     });
@@ -157,7 +161,7 @@ export class ChunkLoader {
           cx,
           cz,
           data,
-          this.getBlockIndex.bind(this),
+          (x, y, z) => getBlockIndex(x, y, z, this.chunkSize, this.chunkHeight),
           this.getBlock.bind(this),
         );
       }
@@ -189,7 +193,7 @@ export class ChunkLoader {
       cx,
       cz,
       data,
-      this.getBlockIndex.bind(this),
+      (x, y, z) => getBlockIndex(x, y, z, this.chunkSize, this.chunkHeight),
       this.getBlock.bind(this),
     );
   }
@@ -247,6 +251,7 @@ export class ChunkLoader {
 
   /**
    * Дождаться загрузки чанка (с синхронной генерацией если нужно)
+   * Используется для спавна игрока — требует немедленной генерации
    */
   public async waitForChunk(cx: number, cz: number): Promise<void> {
     const key = `${cx},${cz}`;
@@ -260,38 +265,56 @@ export class ChunkLoader {
         cx,
         cz,
         savedData,
-        this.getBlockIndex.bind(this),
+        (x, y, z) => getBlockIndex(x, y, z, this.chunkSize, this.chunkHeight),
         this.getBlock.bind(this),
       );
       return;
     }
 
     // Синхронная генерация (для спавна игрока)
-    this.generationQueue.enqueue(cx, cz, 0);
-    
-    // Принудительно обработать очередь
-    return new Promise((resolve) => {
-      const check = () => {
-        this.generationQueue.process((genCx, genCz, data) => {
-          const genKey = `${genCx},${genCz}`;
-          this.dataManager.setChunkData(genKey, data, true);
-          this.meshManager.buildMesh(
-            genCx,
-            genCz,
-            data,
-            this.getBlockIndex.bind(this),
-            this.getBlock.bind(this),
-          );
-        });
-        
-        if (this.dataManager.hasChunkData(key)) {
-          resolve();
-        } else {
-          setTimeout(check, 50);
-        }
-      };
-      check();
-    });
+    // НЕ используем воркеры здесь, т.к. нужен немедленный результат
+    const data = new Uint8Array(this.chunkSize * this.chunkSize * this.chunkHeight);
+    const startX = cx * this.chunkSize;
+    const startZ = cz * this.chunkSize;
+
+    const blockIndexGetter = createBlockIndexGetter(this.chunkSize, this.chunkHeight);
+
+    // Generate terrain
+    this.terrainGen.generateTerrain(
+      data,
+      this.chunkSize,
+      this.chunkHeight,
+      startX,
+      startZ,
+      blockIndexGetter,
+    );
+
+    // Generate ores
+    this.structureGen.generateOres(
+      data,
+      this.chunkSize,
+      this.chunkHeight,
+      startX,
+      startZ,
+      blockIndexGetter,
+    );
+
+    // Generate trees
+    this.structureGen.generateTrees(
+      data,
+      this.chunkSize,
+      this.chunkHeight,
+      blockIndexGetter,
+    );
+
+    this.dataManager.setChunkData(key, data, true);
+    this.meshManager.buildMesh(
+      cx,
+      cz,
+      data,
+      (x, y, z) => getBlockIndex(x, y, z, this.chunkSize, this.chunkHeight),
+      this.getBlock.bind(this),
+    );
   }
 
   /**
@@ -354,9 +377,5 @@ export class ChunkLoader {
    */
   public getDirtyChunks(): Set<string> {
     return this.dataManager.getDirtyChunks();
-  }
-
-  private getBlockIndex(x: number, y: number, z: number): number {
-    return x + y * this.chunkSize + z * this.chunkSize * this.chunkHeight;
   }
 }

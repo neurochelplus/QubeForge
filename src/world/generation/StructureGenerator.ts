@@ -1,4 +1,5 @@
 import { BLOCK } from "../../constants/Blocks";
+import { WORLD_GENERATION } from "../../constants/WorldConstants";
 import type { TerrainGenerator } from "./TerrainGenerator";
 
 export class StructureGenerator {
@@ -19,7 +20,7 @@ export class StructureGenerator {
         const height = this.findSurfaceHeight(data, chunkSize, chunkHeight, x, z, getBlockIndex);
         if (height > 0) {
           const index = getBlockIndex(x, height, z);
-          if (data[index] === BLOCK.GRASS && Math.random() < 0.01) {
+          if (data[index] === BLOCK.GRASS && Math.random() < WORLD_GENERATION.TREE_CHANCE) {
             this.placeTree(data, chunkSize, chunkHeight, x, height + 1, z, getBlockIndex);
           }
         }
@@ -52,7 +53,7 @@ export class StructureGenerator {
     startZ: number,
     getBlockIndex: (x: number, y: number, z: number) => number,
   ) {
-    const trunkHeight = Math.floor(Math.random() * 2) + 4; // 4-5 blocks
+    const trunkHeight = Math.floor(Math.random() * (WORLD_GENERATION.TREE_MAX_HEIGHT - WORLD_GENERATION.TREE_MIN_HEIGHT + 1)) + WORLD_GENERATION.TREE_MIN_HEIGHT;
 
     // Trunk
     for (let y = 0; y < trunkHeight; y++) {
@@ -114,8 +115,8 @@ export class StructureGenerator {
       startX,
       startZ,
       BLOCK.COAL_ORE,
-      8,
-      80,
+      WORLD_GENERATION.COAL_VEIN_SIZE,
+      WORLD_GENERATION.COAL_ATTEMPTS,
       getBlockIndex,
     );
     this.generateVein(
@@ -125,8 +126,8 @@ export class StructureGenerator {
       startX,
       startZ,
       BLOCK.IRON_ORE,
-      6,
-      50,
+      WORLD_GENERATION.IRON_VEIN_SIZE,
+      WORLD_GENERATION.IRON_ATTEMPTS,
       getBlockIndex,
     );
   }

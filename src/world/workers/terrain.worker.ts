@@ -4,6 +4,8 @@
  */
 
 import { createNoise2D } from "simplex-noise";
+import { getBlockIndex } from "../../utils/ChunkUtils";
+import { WORLD_GENERATION } from "../../constants/WorldConstants";
 
 // Константы блоков (копия из Blocks.ts для изоляции воркера)
 const BLOCK = {
@@ -21,10 +23,17 @@ const BLOCK = {
   FURNACE: 14,
 } as const;
 
-// Параметры генерации
-const TERRAIN_SCALE = 50;
-const TERRAIN_HEIGHT = 8;
-const BASE_HEIGHT = 20;
+// Параметры генерации из централизованных констант
+const TERRAIN_SCALE = WORLD_GENERATION.TERRAIN_SCALE;
+const TERRAIN_HEIGHT = WORLD_GENERATION.TERRAIN_HEIGHT;
+const BASE_HEIGHT = WORLD_GENERATION.BASE_HEIGHT;
+const TREE_CHANCE = WORLD_GENERATION.TREE_CHANCE;
+const TREE_MIN_HEIGHT = WORLD_GENERATION.TREE_MIN_HEIGHT;
+const TREE_MAX_HEIGHT = WORLD_GENERATION.TREE_MAX_HEIGHT;
+const COAL_VEIN_SIZE = WORLD_GENERATION.COAL_VEIN_SIZE;
+const COAL_ATTEMPTS = WORLD_GENERATION.COAL_ATTEMPTS;
+const IRON_VEIN_SIZE = WORLD_GENERATION.IRON_VEIN_SIZE;
+const IRON_ATTEMPTS = WORLD_GENERATION.IRON_ATTEMPTS;
 
 // Кэш noise функции для текущего seed
 let currentSeed: number = 0;
@@ -46,10 +55,6 @@ function getTerrainHeight(worldX: number, worldZ: number): number {
   let height = Math.floor(noiseValue * TERRAIN_HEIGHT) + BASE_HEIGHT;
   if (height < 1) height = 1;
   return height;
-}
-
-function getBlockIndex(x: number, y: number, z: number, chunkSize: number, chunkHeight: number): number {
-  return x + y * chunkSize + z * chunkSize * chunkHeight;
 }
 
 function generateTerrain(
@@ -89,9 +94,9 @@ function generateOres(
   startZ: number,
 ) {
   // Coal ore
-  generateVein(data, chunkSize, chunkHeight, startX, startZ, BLOCK.COAL_ORE, 8, 80);
+  generateVein(data, chunkSize, chunkHeight, startX, startZ, BLOCK.COAL_ORE, COAL_VEIN_SIZE, COAL_ATTEMPTS);
   // Iron ore
-  generateVein(data, chunkSize, chunkHeight, startX, startZ, BLOCK.IRON_ORE, 6, 50);
+  generateVein(data, chunkSize, chunkHeight, startX, startZ, BLOCK.IRON_ORE, IRON_VEIN_SIZE, IRON_ATTEMPTS);
 }
 
 function generateVein(
@@ -180,7 +185,7 @@ function generateTrees(
       const height = findSurfaceHeight(data, chunkSize, chunkHeight, x, z);
       if (height > 0) {
         const index = getBlockIndex(x, height, z, chunkSize, chunkHeight);
-        if (data[index] === BLOCK.GRASS && Math.random() < 0.01) {
+        if (data[index] === BLOCK.GRASS && Math.random() < TREE_CHANCE) {
           placeTree(data, chunkSize, chunkHeight, x, height + 1, z);
         }
       }
@@ -196,7 +201,7 @@ function placeTree(
   startY: number,
   startZ: number,
 ) {
-  const trunkHeight = Math.floor(Math.random() * 2) + 4;
+  const trunkHeight = Math.floor(Math.random() * (TREE_MAX_HEIGHT - TREE_MIN_HEIGHT + 1)) + TREE_MIN_HEIGHT;
 
   // Trunk
   for (let y = 0; y < trunkHeight; y++) {

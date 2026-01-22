@@ -1,13 +1,14 @@
 import { createNoise2D } from "simplex-noise";
 import { BLOCK } from "../../constants/Blocks";
+import { WORLD_GENERATION } from "../../constants/WorldConstants";
 
 export class TerrainGenerator {
   private noise2D: (x: number, y: number) => number;
   private seed: number;
 
-  private readonly TERRAIN_SCALE = 50;
-  private readonly TERRAIN_HEIGHT = 8;
-  private readonly BASE_HEIGHT = 20;
+  private readonly TERRAIN_SCALE = WORLD_GENERATION.TERRAIN_SCALE;
+  private readonly TERRAIN_HEIGHT = WORLD_GENERATION.TERRAIN_HEIGHT;
+  private readonly BASE_HEIGHT = WORLD_GENERATION.BASE_HEIGHT;
 
   constructor(seed?: number) {
     this.seed = seed ?? Math.floor(Math.random() * 2147483647);

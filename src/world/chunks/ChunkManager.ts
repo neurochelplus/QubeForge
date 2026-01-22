@@ -23,18 +23,31 @@ export class ChunkManager {
 
   private loader: ChunkLoader;
   private visibility: ChunkVisibility;
-  
+
   // Throttling: обновлять чанки не каждый кадр
   private updateCounter: number = 0;
   private readonly UPDATE_INTERVAL: number = 3; // Каждые 3 кадра
-  
+
   // Кэш позиции игрока для определения движения
   private lastPlayerChunkX: number = -Infinity;
   private lastPlayerChunkZ: number = -Infinity;
 
+  // Кэшированные значения (RegExp не выполняется каждый кадр!)
+  private readonly isMobile: boolean;
+  private readonly chunkRadius: number;
+  private readonly memoryCleanupChance: number;
+
   constructor(scene: THREE.Scene, seed?: number, dbName?: string) {
     this.loader = new ChunkLoader(scene, this.chunkSize, this.chunkHeight, seed, dbName);
     this.visibility = new ChunkVisibility(this.chunkSize, this.chunkHeight);
+
+    // Кэшируем isMobile один раз при создании
+    this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent,
+    ) || (navigator.maxTouchPoints > 0 && window.innerWidth < 1024);
+
+    this.chunkRadius = 2; // Уменьшен с 3 до 2 для лучшей производительности
+    this.memoryCleanupChance = this.isMobile ? 0.02 : 0.005;
   }
 
   public async init(): Promise<void> {
@@ -72,29 +85,24 @@ export class ChunkManager {
    */
   public update(playerPos: THREE.Vector3): void {
     const profiler = window.__profiler;
-    
+
     const cx = Math.floor(playerPos.x / this.chunkSize);
     const cz = Math.floor(playerPos.z / this.chunkSize);
-    
+
     // Throttling: полное обновление только каждые N кадров
     // или если игрок перешёл в новый чанк
     const playerMovedChunk = cx !== this.lastPlayerChunkX || cz !== this.lastPlayerChunkZ;
     this.updateCounter++;
-    
+
     const shouldFullUpdate = playerMovedChunk || this.updateCounter >= this.UPDATE_INTERVAL;
-    
+
     if (shouldFullUpdate) {
       this.updateCounter = 0;
       this.lastPlayerChunkX = cx;
       this.lastPlayerChunkZ = cz;
     }
-    
-    const isMobile =
-      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-        navigator.userAgent,
-      ) ||
-      (navigator.maxTouchPoints > 0 && window.innerWidth < 1024);
-    const radius = isMobile ? 2 : 2; // Уменьшен с 3 до 2 для лучшей производительности
+
+    const radius = this.chunkRadius;
 
     const activeChunks = new Set<string>();
 
@@ -138,7 +146,7 @@ export class ChunkManager {
     }
 
     // Memory cleanup (реже)
-    if (Math.random() < (isMobile ? 0.02 : 0.005)) {
+    if (Math.random() < this.memoryCleanupChance) {
       this.checkMemory(playerPos);
     }
   }

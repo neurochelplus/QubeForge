@@ -6,13 +6,21 @@ export class PerformanceProfiler {
   private metrics: Map<string, MetricData> = new Map();
   private frameTimings: number[] = [];
   private maxFrameTimings: number = 120; // 2 секунды при 60 FPS
-  
+
   private lastFrameTime: number = performance.now();
   private freezeThreshold: number = 33.33; // >33.33ms = <30 FPS (realistic for voxel game)
   private freezeCount: number = 0;
-  
+
   private container: HTMLDivElement | null = null;
   private isVisible: boolean = false;
+
+  // Сохранённый handler для cleanup
+  private keydownHandler = (e: KeyboardEvent) => {
+    if (e.key === 'F3') {
+      e.preventDefault();
+      this.toggle();
+    }
+  };
 
   constructor() {
     this.createUI();
@@ -42,11 +50,11 @@ export class PerformanceProfiler {
    */
   public endMeasure(label: string): void {
     performance.mark(`${label}-end`);
-    
+
     try {
       performance.measure(label, `${label}-start`, `${label}-end`);
       const measure = performance.getEntriesByName(label).pop() as PerformanceMeasure;
-      
+
       if (measure) {
         const metric = this.metrics.get(label)!;
         metric.totalTime += measure.duration;
@@ -55,7 +63,7 @@ export class PerformanceProfiler {
         metric.maxTime = Math.max(metric.maxTime, measure.duration);
         metric.minTime = Math.min(metric.minTime, measure.duration);
       }
-      
+
       performance.clearMarks(`${label}-start`);
       performance.clearMarks(`${label}-end`);
       performance.clearMeasures(label);
@@ -70,7 +78,7 @@ export class PerformanceProfiler {
   public updateFrame(): void {
     const now = performance.now();
     const frameTime = now - this.lastFrameTime;
-    
+
     this.frameTimings.push(frameTime);
     if (this.frameTimings.length > this.maxFrameTimings) {
       this.frameTimings.shift();
@@ -120,21 +128,30 @@ export class PerformanceProfiler {
    */
   public toggle(): void {
     if (!this.container) return;
-    
+
     this.isVisible = !this.isVisible;
     this.container.style.display = this.isVisible ? 'block' : 'none';
-    
+
     if (this.isVisible) {
       this.updateUI();
     }
   }
 
   /**
-   * Удалить профайлер
+   * Удалить профайлер и очистить event listeners
    */
   public dispose(): void {
+    // Удаляем event listener
+    document.removeEventListener('keydown', this.keydownHandler);
+
+    // Удаляем UI
     if (this.container && this.container.parentElement) {
       this.container.parentElement.removeChild(this.container);
+    }
+
+    // Удаляем глобальную ссылку
+    if ((window as any).__profiler === this) {
+      delete (window as any).__profiler;
     }
   }
 
@@ -188,12 +205,8 @@ export class PerformanceProfiler {
 
   private setupKeyboardShortcut(): void {
     // F3 для открытия профайлера (как в Minecraft)
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'F3') {
-        e.preventDefault();
-        this.toggle();
-      }
-    });
+    // Используем сохранённый handler для возможности cleanup
+    document.addEventListener('keydown', this.keydownHandler);
   }
 
   private updateUI(): void {
@@ -202,8 +215,8 @@ export class PerformanceProfiler {
     const stats = this.getStats();
     const { frameStats, metrics, freezeCount, totalFrames } = stats;
 
-    const freezePercent = totalFrames > 0 
-      ? ((freezeCount / totalFrames) * 100).toFixed(1) 
+    const freezePercent = totalFrames > 0
+      ? ((freezeCount / totalFrames) * 100).toFixed(1)
       : '0.0';
 
     let html = `

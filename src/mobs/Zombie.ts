@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { Mob, MobState } from "./Mob";
 import { World } from "../world/World";
-import { Player } from "../player/Player";
 
 export class Zombie extends Mob {
   protected readonly walkSpeed: number = 1.75;
@@ -31,7 +30,8 @@ export class Zombie extends Mob {
   private readonly tempPushDir = new THREE.Vector3();
   private readonly tempEyePos = new THREE.Vector3();
   private readonly tempToPlayer = new THREE.Vector3();
-  
+  private readonly tempShelter = new THREE.Vector3(); // Для findNearbyShelter
+
   // Cached raycaster for line-of-sight checks
   private readonly raycaster = new THREE.Raycaster();
 
@@ -259,7 +259,7 @@ export class Zombie extends Mob {
         // Main path blocked, try diagonals
         this.tempDir.copy(this.tempForward).applyAxisAngle(Zombie.UP, Math.PI / 4);
         const leftBlocked = isBlocked(p, this.tempDir, checkDist);
-        
+
         this.tempDir.copy(this.tempForward).applyAxisAngle(Zombie.UP, -Math.PI / 4);
         const rightBlocked = isBlocked(p, this.tempDir, checkDist);
 
@@ -385,7 +385,9 @@ export class Zombie extends Mob {
           const dist = x * x + z * z;
           if (dist < minDist) {
             minDist = dist;
-            bestSpot = new THREE.Vector3(cx + 0.5, startY, cz + 0.5);
+            // Используем кэшированный вектор и клонируем только результат
+            this.tempShelter.set(cx + 0.5, startY, cz + 0.5);
+            bestSpot = this.tempShelter.clone();
           }
         }
       }

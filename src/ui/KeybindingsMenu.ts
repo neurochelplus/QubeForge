@@ -15,7 +15,7 @@ export class KeybindingsMenu {
   private keysList: HTMLElement;
   private manager: KeybindingsManager;
   private previousMenu: HTMLElement | null = null;
-  
+
   // Состояние записи новой клавиши
   private isRecording = false;
   private recordingAction: GameAction | null = null;
@@ -24,6 +24,9 @@ export class KeybindingsMenu {
 
   // Callback для возврата в предыдущее меню
   private onBack: (() => void) | null = null;
+
+  // Сохранённый handler для cleanup
+  private keydownHandler = (e: KeyboardEvent) => this.handleKeyDown(e);
 
   constructor() {
     this.manager = KeybindingsManager.getInstance();
@@ -46,8 +49,8 @@ export class KeybindingsMenu {
       this.render();
     });
 
-    // Глобальный обработчик клавиш для записи
-    document.addEventListener('keydown', (e) => this.handleKeyDown(e));
+    // Глобальный обработчик клавиш для записи (с сохранённым handler для cleanup)
+    document.addEventListener('keydown', this.keydownHandler);
   }
 
   /**
@@ -67,7 +70,7 @@ export class KeybindingsMenu {
   public hide(): void {
     this.cancelRecording();
     this.container.style.display = 'none';
-    
+
     if (this.onBack) {
       this.onBack();
     } else if (this.previousMenu) {
@@ -209,5 +212,12 @@ export class KeybindingsMenu {
    */
   public isOpen(): boolean {
     return this.container.style.display === 'flex';
+  }
+
+  /**
+   * Cleanup event listeners
+   */
+  public dispose(): void {
+    document.removeEventListener('keydown', this.keydownHandler);
   }
 }

@@ -9,6 +9,10 @@ export class ChunkCulling {
   private projScreenMatrix: THREE.Matrix4 = new THREE.Matrix4();
   private chunkBounds: Map<string, THREE.Box3> = new Map();
 
+  // Кэшированные векторы для создания Box3 (избегаем аллокаций)
+  private readonly tempMin: THREE.Vector3 = new THREE.Vector3();
+  private readonly tempMax: THREE.Vector3 = new THREE.Vector3();
+
   /**
    * Обновить frustum из камеры
    */
@@ -38,10 +42,12 @@ export class ChunkCulling {
       const worldX = chunkX * chunkSize;
       const worldZ = chunkZ * chunkSize;
 
-      box = new THREE.Box3(
-        new THREE.Vector3(worldX, 0, worldZ),
-        new THREE.Vector3(worldX + chunkSize, chunkHeight, worldZ + chunkSize),
-      );
+      // Используем кэшированные векторы для установки значений
+      this.tempMin.set(worldX, 0, worldZ);
+      this.tempMax.set(worldX + chunkSize, chunkHeight, worldZ + chunkSize);
+
+      // Создаём Box3 и копируем значения (Box3 создаётся один раз на чанк)
+      box = new THREE.Box3(this.tempMin.clone(), this.tempMax.clone());
       this.chunkBounds.set(key, box);
     }
 
@@ -62,3 +68,4 @@ export class ChunkCulling {
     this.chunkBounds.clear();
   }
 }
+

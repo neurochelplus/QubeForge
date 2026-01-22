@@ -70,6 +70,9 @@ export class InventoryUI {
       this.inventoryGrid.appendChild(el);
       this.cacheSlot(i, el);
     }
+
+    // Event delegation — вызывается ОДИН раз после создания всех слотов
+    this.setupEventDelegation();
   }
 
   private cacheSlot(index: number, el: HTMLElement) {
@@ -79,9 +82,7 @@ export class InventoryUI {
     } else {
       this.slotCache.set(index, [el]);
     }
-
-    // Event delegation для всех слотов
-    this.setupEventDelegation();
+    // НЕ вызываем setupEventDelegation() здесь — это делается один раз в init()
   }
 
   private setupEventDelegation() {
@@ -99,6 +100,7 @@ export class InventoryUI {
     this.inventoryGrid.addEventListener("mousedown", (e) => this.handleMouseDown(e), true);
     this.inventoryGrid.addEventListener("touchstart", (e) => this.handleTouchStart(e), true);
   }
+
 
   private getSlotIndex(target: EventTarget | null): number | null {
     if (!target) return null;

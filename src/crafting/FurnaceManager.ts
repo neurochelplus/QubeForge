@@ -105,9 +105,10 @@ export class FurnaceManager {
 
   public tick(deltaTime: number) {
     // deltaTime в секундах - время с последнего кадра
-    this.furnaces.forEach((furnace) => {
+    // Используем for...of вместо forEach (избегаем создания замыкания каждый тик)
+    for (const furnace of this.furnaces.values()) {
       // Защита от поврежденных данных печи из IndexedDB
-      if (!this.validateFurnaceData(furnace)) return;
+      if (!this.validateFurnaceData(furnace)) continue;
 
       let isBurning = furnace.burnTime > 0;
       let inventoryChanged = false;
@@ -152,7 +153,7 @@ export class FurnaceManager {
       if (inventoryChanged) {
         this.dirty = true; // Помечаем для сохранения
       }
-    });
+    }
   }
 
   // Проверяет, можно ли переплавить предмет в печи
@@ -204,9 +205,9 @@ export class FurnaceManager {
   public async save() {
     if (!this.dirty) return; // Нет изменений - не сохраняем
     const promises: Promise<void>[] = [];
-    this.furnaces.forEach((data, key) => {
+    for (const [key, data] of this.furnaces) {
       promises.push(this.db.set(key, data, "blockEntities"));
-    });
+    }
     await Promise.all(promises);
     this.dirty = false;
     logger.debug(`Saved ${this.furnaces.size} furnaces to ${this.db.getDbName()}`);

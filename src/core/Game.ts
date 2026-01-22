@@ -32,8 +32,6 @@ import { logger } from "../utils/Logger";
 import { GameLoop, ToolDurability } from "./game/index";
 
 export class Game {
-  [x: string]: any;
-
   // Core systems
   public renderer: Renderer;
   public gameState: GameState;

@@ -7,12 +7,32 @@ import { BlockColors } from "../../constants/BlockColors";
 export class ChunkMeshBuilder {
   private noiseTexture: THREE.DataTexture;
 
+  // Shared material для всех чанков — создаётся один раз, используется везде
+  private static sharedMaterial: THREE.MeshStandardMaterial | null = null;
+
   constructor() {
     this.noiseTexture = TextureAtlas.createNoiseTexture();
+    // Инициализировать shared material при первом создании builder'а
+    if (!ChunkMeshBuilder.sharedMaterial) {
+      ChunkMeshBuilder.sharedMaterial = new THREE.MeshStandardMaterial({
+        map: this.noiseTexture,
+        vertexColors: true,
+        roughness: 0.8,
+        alphaTest: 0.5,
+        transparent: true,
+      });
+    }
   }
 
   public getNoiseTexture(): THREE.DataTexture {
     return this.noiseTexture;
+  }
+
+  /**
+   * Получить shared material (для использования в других местах, если нужно)
+   */
+  public static getSharedMaterial(): THREE.MeshStandardMaterial | null {
+    return ChunkMeshBuilder.sharedMaterial;
   }
 
   public buildMesh(
@@ -35,7 +55,7 @@ export class ChunkMeshBuilder {
     // Предвычислить границы Y с блоками (оптимизированный поиск)
     let minY = chunkHeight;
     let maxY = 0;
-    
+
     // Быстрый поиск границ — проверяем только первый/последний блок в каждом слое
     for (let y = 0; y < chunkHeight; y++) {
       for (let x = 0; x < chunkSize; x++) {
@@ -222,13 +242,8 @@ export class ChunkMeshBuilder {
     geometry.setIndex(indices);
     geometry.computeBoundingSphere();
 
-    const material = new THREE.MeshStandardMaterial({
-      map: this.noiseTexture,
-      vertexColors: true,
-      roughness: 0.8,
-      alphaTest: 0.5,
-      transparent: true,
-    });
+    // Используем shared material — НЕ создаём новый для каждого чанка!
+    const material = ChunkMeshBuilder.sharedMaterial!;
 
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(startX, 0, startZ);

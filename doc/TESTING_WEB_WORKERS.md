@@ -283,3 +283,4 @@ _____________________________________________
 
 - `doc/WEB_WORKERS_INTEGRATION.md` — документация интеграции
 - `TODO_WORLD_GENERATION.md` — общий TODO лист
+- `doc/README.md` — навигация по документации

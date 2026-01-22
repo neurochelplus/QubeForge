@@ -10,6 +10,9 @@ export class ChunkMeshBuilder {
   // Shared material для всех чанков — создаётся один раз, используется везде
   private static sharedMaterial: THREE.MeshStandardMaterial | null = null;
 
+  // Кэш для проверок соседей (очищается после каждого построения меша)
+  private neighborCache: Map<string, number> = new Map();
+
   constructor() {
     this.noiseTexture = TextureAtlas.createNoiseTexture();
     // Инициализировать shared material при первом создании builder'а
@@ -44,6 +47,9 @@ export class ChunkMeshBuilder {
     _getBlockIndex: (x: number, y: number, z: number) => number,
     getNeighborBlock: (x: number, y: number, z: number) => number,
   ): THREE.Mesh {
+    // Очистить кэш перед построением нового меша
+    this.neighborCache.clear();
+
     const positions: number[] = [];
     const normals: number[] = [];
     const uvs: number[] = [];
@@ -90,30 +96,106 @@ export class ChunkMeshBuilder {
           const worldX = startX + x;
           const worldZ = startZ + z;
 
-          // Используем getNeighborBlock для всех проверок (безопасно, но медленнее)
-          if (this.isTransparent(getNeighborBlock(worldX, y + 1, worldZ))) {
+          // Проверка: полностью ли закрыт блок (все 6 соседей непрозрачные)
+          if (this.isBlockFullyEnclosed(worldX, y, worldZ, getNeighborBlock)) {
+            continue; // Пропускаем полностью закрытый блок
+          }
+
+          // Используем кэшированные проверки соседей
+          if (this.shouldRenderFace(worldX, y + 1, worldZ, getNeighborBlock)) {
             this.addFace(positions, normals, uvs, colors, x, y, z, type, "top", startX, startZ);
           }
-          if (this.isTransparent(getNeighborBlock(worldX, y - 1, worldZ))) {
+          if (this.shouldRenderFace(worldX, y - 1, worldZ, getNeighborBlock)) {
             this.addFace(positions, normals, uvs, colors, x, y, z, type, "bottom", startX, startZ);
           }
-          if (this.isTransparent(getNeighborBlock(worldX, y, worldZ + 1))) {
+          if (this.shouldRenderFace(worldX, y, worldZ + 1, getNeighborBlock)) {
             this.addFace(positions, normals, uvs, colors, x, y, z, type, "front", startX, startZ);
           }
-          if (this.isTransparent(getNeighborBlock(worldX, y, worldZ - 1))) {
+          if (this.shouldRenderFace(worldX, y, worldZ - 1, getNeighborBlock)) {
             this.addFace(positions, normals, uvs, colors, x, y, z, type, "back", startX, startZ);
           }
-          if (this.isTransparent(getNeighborBlock(worldX + 1, y, worldZ))) {
+          if (this.shouldRenderFace(worldX + 1, y, worldZ, getNeighborBlock)) {
             this.addFace(positions, normals, uvs, colors, x, y, z, type, "right", startX, startZ);
           }
-          if (this.isTransparent(getNeighborBlock(worldX - 1, y, worldZ))) {
+          if (this.shouldRenderFace(worldX - 1, y, worldZ, getNeighborBlock)) {
             this.addFace(positions, normals, uvs, colors, x, y, z, type, "left", startX, startZ);
           }
         }
       }
     }
 
+    // Очистить кэш после построения меша
+    this.neighborCache.clear();
+
     return this.createMesh(positions, normals, uvs, colors, startX, startZ);
+  }
+
+  /**
+   * Проверить, полностью ли закрыт блок (все 6 соседей непрозрачные)
+   * Оптимизация: пропускаем полностью закрытые блоки
+   */
+  private isBlockFullyEnclosed(
+    worldX: number,
+    worldY: number,
+    worldZ: number,
+    getNeighborBlock: (x: number, y: number, z: number) => number,
+  ): boolean {
+    // Проверяем все 6 соседей
+    const top = this.getCachedNeighbor(worldX, worldY + 1, worldZ, getNeighborBlock);
+    if (this.isTransparent(top)) return false;
+
+    const bottom = this.getCachedNeighbor(worldX, worldY - 1, worldZ, getNeighborBlock);
+    if (this.isTransparent(bottom)) return false;
+
+    const front = this.getCachedNeighbor(worldX, worldY, worldZ + 1, getNeighborBlock);
+    if (this.isTransparent(front)) return false;
+
+    const back = this.getCachedNeighbor(worldX, worldY, worldZ - 1, getNeighborBlock);
+    if (this.isTransparent(back)) return false;
+
+    const right = this.getCachedNeighbor(worldX + 1, worldY, worldZ, getNeighborBlock);
+    if (this.isTransparent(right)) return false;
+
+    const left = this.getCachedNeighbor(worldX - 1, worldY, worldZ, getNeighborBlock);
+    if (this.isTransparent(left)) return false;
+
+    // Все соседи непрозрачные — блок полностью закрыт
+    return true;
+  }
+
+  /**
+   * Проверить, нужно ли рендерить грань (сосед прозрачный)
+   * Использует кэш для оптимизации
+   */
+  private shouldRenderFace(
+    worldX: number,
+    worldY: number,
+    worldZ: number,
+    getNeighborBlock: (x: number, y: number, z: number) => number,
+  ): boolean {
+    const neighbor = this.getCachedNeighbor(worldX, worldY, worldZ, getNeighborBlock);
+    return this.isTransparent(neighbor);
+  }
+
+  /**
+   * Получить соседний блок с кэшированием
+   * Оптимизация: избегаем повторных вызовов getNeighborBlock
+   */
+  private getCachedNeighbor(
+    worldX: number,
+    worldY: number,
+    worldZ: number,
+    getNeighborBlock: (x: number, y: number, z: number) => number,
+  ): number {
+    const key = `${worldX},${worldY},${worldZ}`;
+    
+    if (this.neighborCache.has(key)) {
+      return this.neighborCache.get(key)!;
+    }
+
+    const blockType = getNeighborBlock(worldX, worldY, worldZ);
+    this.neighborCache.set(key, blockType);
+    return blockType;
   }
 
   private isTransparent(blockType: number): boolean {

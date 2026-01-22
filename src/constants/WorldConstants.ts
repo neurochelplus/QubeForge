@@ -12,10 +12,10 @@ export const WORLD_GENERATION = {
   // Chunk settings
   CHUNK_SIZE: 32,
   CHUNK_HEIGHT: 128,
-  CHUNK_RADIUS: 3, // Увеличен с 2 до 3 для более ранней загрузки
+  CHUNK_RADIUS: 3, // Оптимальное значение (49 чанков)
 
   // Chunk updates
-  UPDATE_INTERVAL: 3, // Обновлять чанки каждые N кадров
+  UPDATE_INTERVAL: 3, // Обновлять чанки каждые 3 кадра
   MEMORY_CLEANUP_CHANCE_MOBILE: 0.02,
   MEMORY_CLEANUP_CHANCE_DESKTOP: 0.005,
 
@@ -31,6 +31,6 @@ export const WORLD_GENERATION = {
   IRON_ATTEMPTS: 50,
 
   // Web Workers
-  USE_WEB_WORKERS: false, // Отключено: воркеры создают задержки при быстром движении
+  USE_WEB_WORKERS: false, // Отключено: асинхронность создаёт задержки, синхронная генерация работает лучше
   WORKER_POOL_SIZE: Math.min(navigator.hardwareConcurrency || 4, 4), // Максимум 4 воркера
 } as const;

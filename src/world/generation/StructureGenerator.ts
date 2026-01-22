@@ -20,6 +20,12 @@ export class StructureGenerator {
         const height = this.findSurfaceHeight(data, chunkSize, chunkHeight, x, z, getBlockIndex);
         if (height > 0) {
           const index = getBlockIndex(x, height, z);
+          
+          // Получить конфигурацию биома для определения шанса генерации дерева
+          // Примечание: для этого нужны мировые координаты, но мы их не знаем здесь
+          // Пока используем константу из WorldConstants
+          // TODO: передавать startX, startZ для получения мировых координат
+          
           if (data[index] === BLOCK.GRASS && Math.random() < WORLD_GENERATION.TREE_CHANCE) {
             this.placeTree(data, chunkSize, chunkHeight, x, height + 1, z, getBlockIndex);
           }

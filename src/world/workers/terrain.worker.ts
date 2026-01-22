@@ -6,6 +6,7 @@
 import { createNoise2D } from "simplex-noise";
 import { getBlockIndex } from "../../utils/ChunkUtils";
 import { WORLD_GENERATION } from "../../constants/WorldConstants";
+import { BIOME, BIOME_CONFIGS } from "../../constants/Biomes";
 
 // Константы блоков (копия из Blocks.ts для изоляции воркера)
 const BLOCK = {
@@ -24,10 +25,6 @@ const BLOCK = {
 } as const;
 
 // Параметры генерации из централизованных констант
-const TERRAIN_SCALE = WORLD_GENERATION.TERRAIN_SCALE;
-const TERRAIN_HEIGHT = WORLD_GENERATION.TERRAIN_HEIGHT;
-const BASE_HEIGHT = WORLD_GENERATION.BASE_HEIGHT;
-const TREE_CHANCE = WORLD_GENERATION.TREE_CHANCE;
 const TREE_MIN_HEIGHT = WORLD_GENERATION.TREE_MIN_HEIGHT;
 const TREE_MAX_HEIGHT = WORLD_GENERATION.TREE_MAX_HEIGHT;
 const COAL_VEIN_SIZE = WORLD_GENERATION.COAL_VEIN_SIZE;
@@ -50,9 +47,22 @@ function createNoiseGenerator(seed: number) {
   return createNoise2D(random);
 }
 
+/**
+ * Получить биом для координат
+ * Пока возвращает только PLAINS
+ */
+function getBiome(_worldX: number, _worldZ: number): BIOME {
+  return BIOME.PLAINS;
+}
+
 function getTerrainHeight(worldX: number, worldZ: number): number {
-  const noiseValue = noise2D(worldX / TERRAIN_SCALE, worldZ / TERRAIN_SCALE);
-  let height = Math.floor(noiseValue * TERRAIN_HEIGHT) + BASE_HEIGHT;
+  // Получить конфигурацию биома
+  const biome = getBiome(worldX, worldZ);
+  const biomeConfig = BIOME_CONFIGS[biome];
+  
+  // Использовать параметры биома для генерации высоты
+  const noiseValue = noise2D(worldX / biomeConfig.terrainScale, worldZ / biomeConfig.terrainScale);
+  let height = Math.floor(noiseValue * biomeConfig.terrainHeight) + biomeConfig.baseHeight;
   if (height < 1) height = 1;
   return height;
 }
@@ -64,19 +74,31 @@ function generateTerrain(
   startX: number,
   startZ: number,
 ) {
+  // ОПТИМИЗАЦИЯ: Получить конфигурацию биома один раз для всего чанка
+  // Пока всегда PLAINS, поэтому можно кэшировать
+  const biome = getBiome(startX, startZ);
+  const biomeConfig = BIOME_CONFIGS[biome];
+
   for (let x = 0; x < chunkSize; x++) {
     for (let z = 0; z < chunkSize; z++) {
       const worldX = startX + x;
       const worldZ = startZ + z;
 
-      let height = getTerrainHeight(worldX, worldZ);
+      // ОПТИМИЗАЦИЯ: Вычислить высоту напрямую, без повторного вызова getBiome
+      const noiseValue = noise2D(worldX / biomeConfig.terrainScale, worldZ / biomeConfig.terrainScale);
+      let height = Math.floor(noiseValue * biomeConfig.terrainHeight) + biomeConfig.baseHeight;
+      if (height < 1) height = 1;
       if (height >= chunkHeight) height = chunkHeight - 1;
 
       for (let y = 0; y <= height; y++) {
         let type = BLOCK.STONE;
-        if (y === 0) type = BLOCK.BEDROCK;
-        else if (y === height) type = BLOCK.GRASS;
-        else if (y >= height - 3) type = BLOCK.DIRT;
+        if (y === 0) {
+          type = BLOCK.BEDROCK;
+        } else if (y === height) {
+          type = biomeConfig.surfaceBlock;
+        } else if (y >= height - biomeConfig.subsurfaceDepth) {
+          type = biomeConfig.subsurfaceBlock;
+        }
 
         const index = getBlockIndex(x, y, z, chunkSize, chunkHeight);
         data[index] = type;
@@ -185,7 +207,10 @@ function generateTrees(
       const height = findSurfaceHeight(data, chunkSize, chunkHeight, x, z);
       if (height > 0) {
         const index = getBlockIndex(x, height, z, chunkSize, chunkHeight);
-        if (data[index] === BLOCK.GRASS && Math.random() < TREE_CHANCE) {
+        
+        // Пока используем константу TREE_CHANCE
+        // TODO: использовать biomeConfig.treeChance когда будут мировые координаты
+        if (data[index] === BLOCK.GRASS && Math.random() < WORLD_GENERATION.TREE_CHANCE) {
           placeTree(data, chunkSize, chunkHeight, x, height + 1, z);
         }
       }

@@ -1,59 +1,52 @@
 import * as THREE from "three";
-import { BLOCK_DEFS, hexToRgb } from "../../constants/BlockTextures";
+import { BlockRegistry } from "../../registry/BlockRegistry";
+import type { TexturePattern } from "../../registry/types";
 
+/**
+ * Текстурный атлас для блоков
+ * Автоматически генерирует текстуры на основе данных из реестра
+ */
 export class TextureAtlas {
   private static readonly ATLAS_WIDTH = 192; // 12 slots * 16px
   private static readonly ATLAS_HEIGHT = 16;
   private static readonly SLOT_COUNT = 12;
+  private static readonly SLOT_SIZE = 16;
 
+  // Карта: numericId блока → слоты для каждой грани
+  private static slotMap = new Map<number, {
+    top?: number;
+    side?: number;
+    bottom?: number;
+    front?: number;
+  }>();
+
+  // Следующий свободный слот
+  private static nextSlot = 1; // Slot 0 зарезервирован для шума
+
+  /**
+   * Создать текстуру с шумом и паттернами блоков
+   */
   public static createNoiseTexture(): THREE.DataTexture {
     const width = this.ATLAS_WIDTH;
     const height = this.ATLAS_HEIGHT;
     const data = new Uint8Array(width * height * 4); // RGBA
 
+    // Заполнить базовым шумом (Slot 0 и фон для всех слотов)
     for (let i = 0; i < width * height; i++) {
       const stride = i * 4;
-      const x = i % width;
-      const y = Math.floor(i / width);
-
       const v = Math.floor(Math.random() * (255 - 150) + 150); // 150-255
       data[stride] = v; // R
       data[stride + 1] = v; // G
       data[stride + 2] = v; // B
-      data[stride + 3] = 255; // Default Alpha
-
-      // Slot 0: Noise (default)
-      // Slot 1: Leaves (16-32)
-      if (x >= 16 && x < 32) {
-        if (Math.random() < 0.4) {
-          data[stride + 3] = 0; // Transparent
-        }
-      }
-      // Slot 2: Planks (32-48)
-      else if (x >= 32 && x < 48) {
-        const woodGrain = 230 + Math.random() * 20;
-        data[stride] = woodGrain;
-        data[stride + 1] = woodGrain;
-        data[stride + 2] = woodGrain;
-        if (y % 4 === 0) {
-          data[stride] = 100;
-          data[stride + 1] = 100;
-          data[stride + 2] = 100;
-        }
-      }
-      // Slots 3-5: Crafting Table (48-96)
-      else if (x >= 48 && x < 96) {
-        this.applyCraftingTableTexture(data, stride, x, y);
-      }
-      // Slots 6-7: Ores (96-128)
-      else if (x >= 96 && x < 128) {
-        this.applyOreTexture(data, stride, x, y);
-      }
-      // Slots 8-10: Furnace (128-176)
-      else if (x >= 128 && x < 176) {
-        this.applyFurnaceTexture(data, stride, x, y);
-      }
+      data[stride + 3] = 255; // Alpha
     }
+
+    // Сбросить карту слотов и счётчик
+    this.slotMap.clear();
+    this.nextSlot = 1;
+
+    // Автоматически применить текстуры из реестра
+    this.applyBlockTexturesFromRegistry(data);
 
     const texture = new THREE.DataTexture(
       data,
@@ -64,120 +57,152 @@ export class TextureAtlas {
     texture.minFilter = THREE.NearestFilter;
     texture.magFilter = THREE.NearestFilter;
     texture.needsUpdate = true;
+
+    console.log(`TextureAtlas: Generated with ${this.nextSlot} slots used`);
     return texture;
   }
 
-  private static applyCraftingTableTexture(
-    data: Uint8Array,
-    stride: number,
-    x: number,
-    y: number,
-  ) {
-    const localX = x % 16;
-    let def = null;
+  /**
+   * Автоматически применить текстуры всех блоков из реестра
+   */
+  private static applyBlockTexturesFromRegistry(data: Uint8Array): void {
+    const allBlocks = BlockRegistry.getAll();
 
-    // Slot 3: Top (48-64)
-    if (x >= 48 && x < 64) {
-      def = BLOCK_DEFS.CRAFTING_TABLE_TOP;
-    }
-    // Slot 4: Side (64-80)
-    else if (x >= 64 && x < 80) {
-      def = BLOCK_DEFS.CRAFTING_TABLE_SIDE;
-    }
-    // Slot 5: Bottom (80-96)
-    else {
-      const woodGrain = 150 + Math.random() * 20;
-      data[stride] = woodGrain;
-      data[stride + 1] = woodGrain;
-      data[stride + 2] = woodGrain;
-      if (y % 4 === 0) {
-        data[stride] = 80;
-        data[stride + 1] = 80;
-        data[stride + 2] = 80;
+    for (const block of allBlocks) {
+      if (!block.textures) continue;
+
+      const slots: {
+        top?: number;
+        side?: number;
+        bottom?: number;
+        front?: number;
+      } = {};
+
+      // Обработать каждую грань
+      if (block.textures.top) {
+        slots.top = this.allocateSlot();
+        this.applyPattern(data, slots.top, block.textures.top, block.transparent);
       }
-      return;
-    }
 
-    if (def?.pattern && def.colors) {
-      const char = def.pattern[y][localX];
-      const colorHex =
-        char === "2" ? def.colors.secondary : def.colors.primary;
-      const rgb = hexToRgb(colorHex);
-      data[stride] = rgb.r;
-      data[stride + 1] = rgb.g;
-      data[stride + 2] = rgb.b;
+      if (block.textures.side) {
+        slots.side = this.allocateSlot();
+        this.applyPattern(data, slots.side, block.textures.side, block.transparent);
+      }
+
+      if (block.textures.bottom) {
+        slots.bottom = this.allocateSlot();
+        this.applyPattern(data, slots.bottom, block.textures.bottom, block.transparent);
+      }
+
+      if (block.textures.front) {
+        slots.front = this.allocateSlot();
+        this.applyPattern(data, slots.front, block.textures.front, block.transparent);
+      }
+
+      // Сохранить маппинг
+      this.slotMap.set(block.numericId, slots);
+
+      console.log(`TextureAtlas: Block "${block.id}" (${block.numericId}) → slots:`, slots);
     }
   }
 
-  private static applyOreTexture(
+  /**
+   * Выделить следующий свободный слот
+   */
+  private static allocateSlot(): number {
+    if (this.nextSlot >= this.SLOT_COUNT) {
+      throw new Error(`TextureAtlas: No more slots available (max ${this.SLOT_COUNT})`);
+    }
+    return this.nextSlot++;
+  }
+
+  /**
+   * Применить паттерн к слоту атласа
+   */
+  private static applyPattern(
     data: Uint8Array,
-    stride: number,
-    x: number,
-    y: number,
-  ) {
-    const localX = x % 16;
-    // Slot 6: Coal (96-112), Slot 7: Iron (112-128)
-    const def = x < 112 ? BLOCK_DEFS.COAL_ORE : BLOCK_DEFS.IRON_ORE;
+    slot: number,
+    texturePattern: TexturePattern,
+    isTransparent: boolean = false,
+  ): void {
+    const { pattern, colors } = texturePattern;
+    const primaryRgb = this.hexToRgb(colors.primary);
+    const secondaryRgb = this.hexToRgb(colors.secondary);
 
-    if (def?.pattern && def.colors) {
-      const char = def.pattern[y][localX];
+    const startX = slot * this.SLOT_SIZE;
+    const endX = startX + this.SLOT_SIZE;
 
-      if (char === "2") {
-        // Secondary (stone base)
-        const noiseV = Math.floor(Math.random() * (255 - 150) + 150);
-        const stoneV = Math.floor(noiseV * 0.5);
-        data[stride] = stoneV;
-        data[stride + 1] = stoneV;
-        data[stride + 2] = stoneV;
-      } else {
-        // Primary (ore)
-        const rgb = hexToRgb(def.colors.primary);
-        data[stride] = rgb.r;
-        data[stride + 1] = rgb.g;
-        data[stride + 2] = rgb.b;
+    for (let y = 0; y < this.SLOT_SIZE; y++) {
+      for (let x = startX; x < endX; x++) {
+        const localX = x - startX;
+        const char = pattern[y][localX];
+        const i = y * this.ATLAS_WIDTH + x;
+        const stride = i * 4;
+
+        if (char === "1") {
+          // Primary color
+          data[stride] = primaryRgb.r;
+          data[stride + 1] = primaryRgb.g;
+          data[stride + 2] = primaryRgb.b;
+          data[stride + 3] = 255;
+        } else if (char === "2") {
+          // Secondary color (для руд - с шумом)
+          if (colors.secondary === "#7D7D7D") {
+            // Это руда - добавляем шум для камня
+            const noiseV = Math.floor(Math.random() * (255 - 150) + 150);
+            const stoneV = Math.floor(noiseV * 0.5);
+            data[stride] = stoneV;
+            data[stride + 1] = stoneV;
+            data[stride + 2] = stoneV;
+          } else {
+            data[stride] = secondaryRgb.r;
+            data[stride + 1] = secondaryRgb.g;
+            data[stride + 2] = secondaryRgb.b;
+          }
+          data[stride + 3] = 255;
+        } else if (char === "0") {
+          // Transparent
+          data[stride + 3] = 0;
+        }
+
+        // Для прозрачных блоков - добавить случайную прозрачность
+        if (isTransparent && char !== "0" && Math.random() < 0.3) {
+          data[stride + 3] = 0;
+        }
       }
     }
   }
 
-  private static applyFurnaceTexture(
-    data: Uint8Array,
-    stride: number,
-    x: number,
-    y: number,
-  ) {
-    const localX = x % 16;
-    let def = null;
+  /**
+   * Получить номер слота для блока и грани
+   */
+  public static getSlot(blockNumericId: number, side: string): number {
+    const slots = this.slotMap.get(blockNumericId);
+    if (!slots) return 0; // Slot 0 = базовый шум
 
-    // Slot 8: Front (128-144)
-    if (x < 144) {
-      def = BLOCK_DEFS.FURNACE_FRONT;
-    }
-    // Slot 9: Side (144-160)
-    else if (x < 160) {
-      def = BLOCK_DEFS.FURNACE_SIDE;
-    }
-    // Slot 10: Top (160-176)
-    else if (x < 176) {
-      def = BLOCK_DEFS.FURNACE_TOP;
-    }
+    // Маппинг граней
+    if (side === "top" && slots.top !== undefined) return slots.top;
+    if (side === "bottom" && slots.bottom !== undefined) return slots.bottom;
+    if (side === "front" && slots.front !== undefined) return slots.front;
+    if (slots.side !== undefined) return slots.side;
 
-    if (def?.pattern && def.colors) {
-      const char = def.pattern[y][localX];
-      const colorHex =
-        char === "2" ? def.colors.secondary : def.colors.primary;
-      const rgb = hexToRgb(colorHex);
-
-      const noise = Math.random() * 0.1 - 0.05; // +/- 5%
-      const r = Math.min(255, Math.max(0, rgb.r + noise * 255));
-      const g = Math.min(255, Math.max(0, rgb.g + noise * 255));
-      const b = Math.min(255, Math.max(0, rgb.b + noise * 255));
-
-      data[stride] = r;
-      data[stride + 1] = g;
-      data[stride + 2] = b;
-    }
+    // Fallback на top или slot 0
+    return slots.top ?? 0;
   }
 
+  /**
+   * Конвертировать hex цвет в RGB
+   */
+  public static hexToRgb(hex: string): { r: number; g: number; b: number } {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return { r, g, b };
+  }
+
+  /**
+   * Получить шаг UV для одного слота
+   */
   public static getUVStep(): number {
     return 1.0 / this.SLOT_COUNT;
   }

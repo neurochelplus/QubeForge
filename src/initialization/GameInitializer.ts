@@ -24,6 +24,7 @@ import { BLOCK } from "../constants/Blocks";
 import { BLOCK_NAMES } from "../constants/BlockNames";
 import { TOOL_TEXTURES } from "../constants/ToolTextures";
 import { initDebugControls } from "../utils/DebugUtils";
+import { BlockRegistry } from "../registry/BlockRegistry";
 
 /**
  * Initializes all game systems and returns references
@@ -80,17 +81,9 @@ export class GameInitializer {
         if (id === BLOCK.FURNACE) {
           const drops = FurnaceManager.getInstance().removeFurnace(x, y, z);
           drops.forEach((d) => {
-            let toolTexture = null;
-            if (
-              TOOL_TEXTURES[d.id] &&
-              (d.id >= 20 ||
-                d.id === 8 ||
-                d.id === 12 ||
-                d.id === 13 ||
-                d.id === 14)
-            ) {
-              toolTexture = TOOL_TEXTURES[d.id].texture;
-            }
+            // Используем TOOL_TEXTURES если доступна текстура
+            const toolTexture = TOOL_TEXTURES[d.id]?.texture || null;
+            
             entities.push(
               new ItemEntity(
                 world,
@@ -100,7 +93,7 @@ export class GameInitializer {
                 z,
                 d.id,
                 world.noiseTexture,
-                d.id === 14 ? null : toolTexture,
+                toolTexture,
                 d.count,
               ),
             );
@@ -113,17 +106,9 @@ export class GameInitializer {
           const { shouldDrop, dropId } = BlockDropHandler.getDropInfo(id, toolId);
 
           if (shouldDrop) {
-            let toolTexture = null;
-            if (
-              TOOL_TEXTURES[dropId] &&
-              (dropId >= 20 ||
-                dropId === 8 ||
-                dropId === 12 ||
-                dropId === 13 ||
-                dropId === 14)
-            ) {
-              toolTexture = TOOL_TEXTURES[dropId].texture;
-            }
+            // Используем TOOL_TEXTURES если доступна текстура
+            const toolTexture = TOOL_TEXTURES[dropId]?.texture || null;
+            
             entities.push(
               new ItemEntity(
                 world,
@@ -195,6 +180,12 @@ export class GameInitializer {
       controls,
       () => inventory.getSelectedSlotItem(),
       (x, y, z, id) => {
+        // Проверяем, можно ли установить этот объект как блок
+        if (!BlockRegistry.canPlaceAsBlock(id)) {
+          console.warn(`Cannot place item ${id} as a block`);
+          return false;
+        }
+
         // Handle furnace placement with rotation
         if (id === BLOCK.FURNACE) {
           const rot = controls.object.rotation.y;
@@ -213,9 +204,11 @@ export class GameInitializer {
             `Placing Furnace: PlayerRot=${rot.toFixed(2)} Segment=${segment} BlockRot=${blockRot}`,
           );
 
+          // Создаём печь ДО установки блока
           furnaceManager.createFurnace(x, y, z, blockRot);
         }
 
+        // Устанавливаем блок
         world.setBlock(x, y, z, id);
 
         // Consume item from inventory

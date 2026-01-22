@@ -98,22 +98,11 @@ export class ItemRenderer {
 
   private static getTextureIndex(type: number, face: number): number {
     // BoxGeometry faces: 0:Right, 1:Left, 2:Top, 3:Bottom, 4:Front, 5:Back
-    if (type === BLOCK.LEAVES) return 1;
-    if (type === BLOCK.PLANKS) return 2;
-    if (type === BLOCK.CRAFTING_TABLE) {
-      if (face === 2) return 3; // Top
-      if (face === 3) return 5; // Bottom
-      return 4; // Side
-    }
-    if (type === BLOCK.COAL_ORE) return 6;
-    if (type === BLOCK.IRON_ORE) return 7;
-    if (type === BLOCK.FURNACE) {
-      if (face === 2) return 10; // Top
-      if (face === 3) return 9; // Bottom
-      if (face === 4) return 8; // Front
-      return 9; // Side
-    }
-    return 0; // Default noise/stone
+    const faceNames = ["right", "left", "top", "bottom", "front", "back"];
+    const faceName = faceNames[face] || "top";
+    
+    // Автоматически получить слот из TextureAtlas
+    return TextureAtlas.getSlot(type, faceName);
   }
 
   private static getFaceName(faceIndex: number): string {

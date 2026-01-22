@@ -1,4 +1,5 @@
 import { BLOCK } from "./Blocks";
+import { BlockRegistry } from "../registry/BlockRegistry";
 
 export interface RGB {
   r: number;
@@ -7,6 +8,7 @@ export interface RGB {
 }
 
 export class BlockColors {
+  // Кэш цветов для производительности
   private static readonly COLORS: Map<number, { top: RGB; side: RGB }> = new Map([
     [BLOCK.GRASS, {
       top: { r: 0.33, g: 0.6, b: 0.33 },
@@ -28,19 +30,19 @@ export class BlockColors {
       top: { r: 0.4, g: 0.2, b: 0.0 },
       side: { r: 0.4, g: 0.2, b: 0.0 },
     }],
-    [BLOCK.LEAVES, {
-      top: { r: 0.13, g: 0.55, b: 0.13 },
-      side: { r: 0.13, g: 0.55, b: 0.13 },
-    }],
-    [BLOCK.PLANKS, {
-      top: { r: 0.76, g: 0.6, b: 0.42 },
-      side: { r: 0.76, g: 0.6, b: 0.42 },
-    }],
     [BLOCK.STICK, {
       top: { r: 0.4, g: 0.2, b: 0.0 },
       side: { r: 0.4, g: 0.2, b: 0.0 },
     }],
     // Textured blocks use white (texture provides color)
+    [BLOCK.LEAVES, {
+      top: { r: 1.0, g: 1.0, b: 1.0 },
+      side: { r: 1.0, g: 1.0, b: 1.0 },
+    }],
+    [BLOCK.PLANKS, {
+      top: { r: 1.0, g: 1.0, b: 1.0 },
+      side: { r: 1.0, g: 1.0, b: 1.0 },
+    }],
     [BLOCK.CRAFTING_TABLE, {
       top: { r: 1.0, g: 1.0, b: 1.0 },
       side: { r: 1.0, g: 1.0, b: 1.0 },
@@ -60,10 +62,19 @@ export class BlockColors {
   ]);
 
   public static getColor(blockType: number, side: "top" | "side" = "top"): RGB {
-    const colors = this.COLORS.get(blockType);
-    if (colors) {
-      return colors[side];
+    // Сначала проверить кэш (для производительности)
+    const cached = this.COLORS.get(blockType);
+    if (cached) {
+      return cached[side];
     }
+
+    // Попробовать получить из реестра
+    const blockDef = BlockRegistry.getByNumericId(blockType);
+    if (blockDef?.colors) {
+      const color = side === "top" ? blockDef.colors.top : blockDef.colors.side;
+      return color;
+    }
+
     // Default color
     return { r: 1.0, g: 1.0, b: 1.0 };
   }

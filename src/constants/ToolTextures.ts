@@ -1,5 +1,5 @@
 import { BLOCK } from "./Blocks";
-import { BLOCK_DEFS } from "./BlockTextures";
+import { BlockRegistry } from "../registry/BlockRegistry";
 import { TextureGenerator } from "./textures/TextureGenerator";
 import type { GeneratedTexture } from "./textures/TextureGenerator";
 import {
@@ -131,36 +131,16 @@ export function initToolTextures() {
       TOOL_DEFS.COOKED_MEAT.color,
     );
 
-    // Generate block icons
-    if (
-      BLOCK_DEFS.CRAFTING_TABLE_TOP?.pattern &&
-      BLOCK_DEFS.CRAFTING_TABLE_TOP.colors
-    ) {
-      TOOL_TEXTURES[BLOCK.CRAFTING_TABLE] = TextureGenerator.generateBlockIcon(
-        BLOCK_DEFS.CRAFTING_TABLE_TOP.pattern,
-        BLOCK_DEFS.CRAFTING_TABLE_TOP.colors,
-      );
-    }
-
-    if (BLOCK_DEFS.COAL_ORE?.pattern && BLOCK_DEFS.COAL_ORE.colors) {
-      TOOL_TEXTURES[BLOCK.COAL_ORE] = TextureGenerator.generateBlockIcon(
-        BLOCK_DEFS.COAL_ORE.pattern,
-        BLOCK_DEFS.COAL_ORE.colors,
-      );
-    }
-
-    if (BLOCK_DEFS.IRON_ORE?.pattern && BLOCK_DEFS.IRON_ORE.colors) {
-      TOOL_TEXTURES[BLOCK.IRON_ORE] = TextureGenerator.generateBlockIcon(
-        BLOCK_DEFS.IRON_ORE.pattern,
-        BLOCK_DEFS.IRON_ORE.colors,
-      );
-    }
-
-    if (BLOCK_DEFS.FURNACE_FRONT?.pattern && BLOCK_DEFS.FURNACE_FRONT.colors) {
-      TOOL_TEXTURES[BLOCK.FURNACE] = TextureGenerator.generateBlockIcon(
-        BLOCK_DEFS.FURNACE_FRONT.pattern,
-        BLOCK_DEFS.FURNACE_FRONT.colors,
-      );
+    // Generate block icons from registry (автоматически для всех блоков с текстурами)
+    const allBlocks = BlockRegistry.getAll();
+    for (const block of allBlocks) {
+      if (block.textures?.top) {
+        TOOL_TEXTURES[block.numericId] = TextureGenerator.generateBlockIcon(
+          block.textures.top.pattern,
+          block.textures.top.colors,
+        );
+        console.log(`Generated icon for block "${block.id}" (${block.numericId})`);
+      }
     }
 
     console.log("Tool textures generated.");

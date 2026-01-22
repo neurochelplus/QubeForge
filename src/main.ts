@@ -12,13 +12,17 @@ import { FurnaceManager } from "./crafting/FurnaceManager";
 import { FeatureToggles } from "./utils/FeatureToggles";
 import { WorldManager } from "./world/WorldManager";
 import { WorldMigration } from "./world/WorldMigration";
+import { initRegistries } from "./registry";
 import "./style.css";
 import "./styles/mod-manager.css";
 import "./styles/mods.css";
 import "./styles/world-selection.css";
 
 async function initializeGame() {
-  // Load feature toggles first
+  // Initialize registries first (blocks, items, tools)
+  initRegistries();
+
+  // Load feature toggles
   const toggles = FeatureToggles.getInstance();
   await toggles.load();
 

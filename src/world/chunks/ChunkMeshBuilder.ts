@@ -181,32 +181,24 @@ export class ChunkMeshBuilder {
   ): { u0: number; u1: number } {
     const uvStep = TextureAtlas.getUVStep();
     const uvInset = 0.001;
-    let slot = 0;
+    
+    // Специальная обработка для печи (с учётом ротации)
+    let actualSide = side;
+    if (type === BLOCK.FURNACE && side !== "top" && side !== "bottom") {
+      const furnace = FurnaceManager.getInstance().getFurnace(worldX, worldY, worldZ);
+      const rot = furnace?.rotation ?? 0;
 
-    if (type === BLOCK.LEAVES) slot = 1;
-    else if (type === BLOCK.PLANKS) slot = 2;
-    else if (type === BLOCK.CRAFTING_TABLE) {
-      if (side === "top") slot = 3;
-      else if (side === "bottom") slot = 5;
-      else slot = 4;
-    } else if (type === BLOCK.COAL_ORE) slot = 6;
-    else if (type === BLOCK.IRON_ORE) slot = 7;
-    else if (type === BLOCK.FURNACE) {
-      if (side === "top") slot = 10;
-      else if (side === "bottom") slot = 9;
-      else {
-        const furnace = FurnaceManager.getInstance().getFurnace(worldX, worldY, worldZ);
-        const rot = furnace?.rotation ?? 0;
+      let frontFace = "front";
+      if (rot === 0) frontFace = "back";
+      else if (rot === 1) frontFace = "right";
+      else if (rot === 2) frontFace = "front";
+      else if (rot === 3) frontFace = "left";
 
-        let frontFace = "front";
-        if (rot === 0) frontFace = "back";
-        else if (rot === 1) frontFace = "right";
-        else if (rot === 2) frontFace = "front";
-        else if (rot === 3) frontFace = "left";
-
-        slot = side === frontFace ? 8 : 9;
-      }
+      actualSide = side === frontFace ? "front" : "side";
     }
+
+    // Автоматически получить слот из TextureAtlas
+    const slot = TextureAtlas.getSlot(type, actualSide);
 
     return {
       u0: uvStep * slot + uvInset,

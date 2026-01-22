@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { BLOCK } from "../constants/Blocks";
-import { hexToRgb } from "../constants/BlockTextures";
+import { TextureAtlas } from "../world/generation/TextureAtlas";
 import { TOOL_DEFS } from "../constants/ToolTextures";
 import type { ToolDefinition } from "../types/Tools";
 
@@ -179,7 +179,7 @@ export class PlayerHand {
     const rgbHandle = { r: 92 / 255, g: 64 / 255, b: 51 / 255 }; // #5C4033
 
     const matColorHex = def.color || "#7d7d7d";
-    const rgbMatRes = hexToRgb(matColorHex);
+    const rgbMatRes = TextureAtlas.hexToRgb(matColorHex);
     const rgbMat = {
       r: rgbMatRes.r / 255,
       g: rgbMatRes.g / 255,
@@ -340,36 +340,13 @@ export class PlayerHand {
       const uvAttr = geo.attributes.uv;
 
       // Faces: 0:Right, 1:Left, 2:Top, 3:Bottom, 4:Front, 5:Back
+      const faceNames = ["right", "left", "top", "bottom", "front", "back"];
+      
       for (let face = 0; face < 6; face++) {
-        let texIdx = 0; // Default Noise
-        // 0: Noise, 1: Leaves, 2: Planks, 3: CT Top, 4: CT Side, 5: CT Bottom
-        // 6: Coal Ore, 7: Iron Ore, 8: Furnace Front, 9: Furnace Side, 10: Furnace Top
-
-        if (id === BLOCK.LEAVES) texIdx = 1;
-        else if (id === BLOCK.PLANKS) texIdx = 2;
-        else if (id === BLOCK.CRAFTING_TABLE) {
-          if (face === 2)
-            texIdx = 3; // Top
-          else if (face === 3)
-            texIdx = 5; // Bottom
-          else texIdx = 4; // Side
-        } else if (id === BLOCK.COAL_ORE) {
-          texIdx = 6;
-        } else if (id === BLOCK.IRON_ORE) {
-          texIdx = 7;
-        } else if (id === BLOCK.FURNACE) {
-          if (face === 2)
-            texIdx = 10; // Top
-          else if (face === 3)
-            texIdx = 5; // Bottom (Reuse CT bottom or Side) -> Let's reuse Side (9) or just make it dark. Side is fine.
-          else if (face === 0)
-            texIdx = 8; // Right (When held, orientation matters. BoxGeometry default: +x is Right. +z is Front.)
-          // Wait, BoxGeometry faces: 0:Right(+x), 1:Left(-x), 2:Top(+y), 3:Bottom(-y), 4:Front(+z), 5:Back(-z).
-          // If we rotate mesh by PI/4 (45 deg), Front face is towards camera?
-          // Let's just map Front (4) to Furnace Front.
-          else if (face === 4) texIdx = 8;
-          else texIdx = 9; // Side
-        }
+        const faceName = faceNames[face];
+        
+        // Автоматически получить слот из TextureAtlas
+        const texIdx = TextureAtlas.getSlot(id, faceName);
 
         const { min, max } = getRange(texIdx);
         const offset = face * 4;
@@ -404,28 +381,22 @@ export class PlayerHand {
         r = 0.4;
         g = 0.2;
         b = 0.0;
-      } else if (id === BLOCK.LEAVES) {
-        r = 0.13;
-        g = 0.55;
-        b = 0.13;
-      } else if (id === BLOCK.PLANKS) {
-        r = 0.76;
-        g = 0.6;
-        b = 0.42;
       } else if (id === BLOCK.STICK) {
         r = 0.4;
         g = 0.2;
         b = 0.0;
       } else if (
+        id === BLOCK.LEAVES ||
+        id === BLOCK.PLANKS ||
         id === BLOCK.COAL_ORE ||
         id === BLOCK.IRON_ORE ||
-        id === BLOCK.FURNACE
+        id === BLOCK.FURNACE ||
+        id === BLOCK.CRAFTING_TABLE
       ) {
         r = 1.0;
         g = 1.0;
         b = 1.0; // Texture has colors
       }
-      // Crafting Table uses white (texture colors)
 
       const colors: number[] = [];
       const grassTop = { r: 0.33, g: 0.6, b: 0.33 };

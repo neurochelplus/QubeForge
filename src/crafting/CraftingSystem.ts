@@ -1,9 +1,8 @@
 import { RECIPES } from "./Recipes";
 
-export interface CraftingSlot {
-  id: number;
-  count: number;
-}
+import type { InventorySlot } from "../inventory/Inventory";
+
+export type CraftingSlot = InventorySlot;
 
 export class CraftingSystem {
   public craftingSlots: CraftingSlot[];

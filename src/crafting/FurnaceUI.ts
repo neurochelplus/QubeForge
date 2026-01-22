@@ -234,7 +234,12 @@ export class FurnaceUI {
           // Split output? Usually we just take all from output in simple implementations.
           // Let's implement split.
           const half = Math.ceil(slotItem.count / 2);
-          dragged = { id: slotItem.id, count: half };
+          dragged = {
+            id: slotItem.id,
+            count: half,
+            durability: slotItem.durability,
+            maxDurability: slotItem.maxDurability
+          };
           slotItem.count -= half;
           if (slotItem.count === 0) slotItem.id = 0;
           this.dragDrop.setDraggedItem(dragged);
@@ -253,12 +258,16 @@ export class FurnaceUI {
             // Place One
             slotItem.id = dragged.id;
             slotItem.count = 1;
+            slotItem.durability = dragged.durability;
+            slotItem.maxDurability = dragged.maxDurability;
             dragged.count--;
             if (dragged.count === 0) dragged = null;
           } else {
             // Place All
             slotItem.id = dragged.id;
             slotItem.count = dragged.count;
+            slotItem.durability = dragged.durability;
+            slotItem.maxDurability = dragged.maxDurability;
             dragged = null;
           }
         } else if (slotItem.id === dragged.id) {
@@ -278,6 +287,8 @@ export class FurnaceUI {
           const temp = { ...slotItem };
           slotItem.id = dragged.id;
           slotItem.count = dragged.count;
+          slotItem.durability = dragged.durability;
+          slotItem.maxDurability = dragged.maxDurability;
           dragged = temp;
         }
         this.dragDrop.setDraggedItem(dragged);
@@ -287,7 +298,12 @@ export class FurnaceUI {
           if (button === 2) {
             // Split
             const half = Math.ceil(slotItem.count / 2);
-            dragged = { id: slotItem.id, count: half };
+            dragged = {
+              id: slotItem.id,
+              count: half,
+              durability: slotItem.durability,
+              maxDurability: slotItem.maxDurability
+            };
             slotItem.count -= half;
             if (slotItem.count === 0) slotItem.id = 0;
           } else {

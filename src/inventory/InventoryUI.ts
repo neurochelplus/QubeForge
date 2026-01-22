@@ -14,7 +14,7 @@ export class InventoryUI {
   private tooltip: HTMLElement;
 
   private touchStartSlotIndex: number | null = null;
-  
+
   // Cached slot elements to avoid querySelectorAll in refresh() hot path
   private slotCache: Map<number, HTMLElement[]> = new Map();
 
@@ -71,7 +71,7 @@ export class InventoryUI {
       this.cacheSlot(i, el);
     }
   }
-  
+
   private cacheSlot(index: number, el: HTMLElement) {
     const arr = this.slotCache.get(index);
     if (arr) {
@@ -111,7 +111,7 @@ export class InventoryUI {
   private handleMouseEnter(e: Event) {
     const index = this.getSlotIndex(e.target);
     if (index === null) return;
-    
+
     const slot = this.inventory.getSlot(index);
     if (this.inventoryMenu.style.display !== "none" && slot.id !== 0) {
       this.tooltip.innerText = BLOCK_NAMES[slot.id] || "Block";
@@ -320,16 +320,16 @@ export class InventoryUI {
         countEl.innerText = slot.count.toString();
 
         if (slot.durability !== undefined && slot.maxDurability !== undefined) {
-            durabilityEl.style.display = "block";
-            const percent = slot.durability / slot.maxDurability;
-            durabilityEl.style.width = `${percent * 100}%`;
-            
-            // Color based on health
-            if (percent > 0.5) durabilityEl.style.backgroundColor = "#00ff00"; // Green
-            else if (percent > 0.2) durabilityEl.style.backgroundColor = "#ffff00"; // Yellow
-            else durabilityEl.style.backgroundColor = "#ff0000"; // Red
+          durabilityEl.style.display = "block";
+          const percent = slot.durability / slot.maxDurability;
+          durabilityEl.style.width = `${percent * 100}%`;
+
+          // Color based on health
+          if (percent > 0.5) durabilityEl.style.backgroundColor = "#00ff00"; // Green
+          else if (percent > 0.2) durabilityEl.style.backgroundColor = "#ffff00"; // Yellow
+          else durabilityEl.style.backgroundColor = "#ff0000"; // Red
         } else {
-            durabilityEl.style.display = "none";
+          durabilityEl.style.display = "none";
         }
 
       } else {
@@ -350,7 +350,12 @@ export class InventoryUI {
         if (button === 2) {
           // Right Click: Split
           const half = Math.ceil(slot.count / 2);
-          draggedItem = { id: slot.id, count: half };
+          draggedItem = {
+            id: slot.id,
+            count: half,
+            durability: slot.durability,
+            maxDurability: slot.maxDurability
+          };
           slot.count -= half;
           if (slot.count === 0) slot.id = 0;
         } else {
@@ -358,6 +363,8 @@ export class InventoryUI {
           draggedItem = { ...slot };
           slot.id = 0;
           slot.count = 0;
+          delete slot.durability;
+          delete slot.maxDurability;
         }
       }
     } else {
@@ -366,12 +373,16 @@ export class InventoryUI {
           // Place One
           slot.id = draggedItem.id;
           slot.count = 1;
+          slot.durability = draggedItem.durability;
+          slot.maxDurability = draggedItem.maxDurability;
           draggedItem.count--;
           if (draggedItem.count === 0) draggedItem = null;
         } else {
           // Place All
           slot.id = draggedItem.id;
           slot.count = draggedItem.count;
+          slot.durability = draggedItem.durability;
+          slot.maxDurability = draggedItem.maxDurability;
           draggedItem = null;
         }
       } else if (slot.id === draggedItem.id) {
@@ -383,6 +394,8 @@ export class InventoryUI {
           const temp = { ...slot };
           slot.id = draggedItem.id;
           slot.count = draggedItem.count;
+          slot.durability = draggedItem.durability;
+          slot.maxDurability = draggedItem.maxDurability;
           draggedItem = temp;
         } else {
           if (button === 2) {
@@ -404,6 +417,8 @@ export class InventoryUI {
         const temp = { ...slot };
         slot.id = draggedItem.id;
         slot.count = draggedItem.count;
+        slot.durability = draggedItem.durability;
+        slot.maxDurability = draggedItem.maxDurability;
         draggedItem = temp;
       }
     }

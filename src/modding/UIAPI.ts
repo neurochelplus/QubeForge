@@ -94,7 +94,7 @@ export class UIAPI implements UIAPIInterface {
     div.innerHTML = html;
 
     // Удалить опасные теги
-    const dangerous = div.querySelectorAll('script, style, iframe, object, embed, link, meta');
+    const dangerous = div.querySelectorAll('script, style, iframe, object, embed, link, meta, base, form');
     dangerous.forEach((el) => el.remove());
 
     // Удалить on* атрибуты и javascript: ссылки
@@ -102,12 +102,30 @@ export class UIAPI implements UIAPIInterface {
     allElements.forEach((el) => {
       const attrs = [...el.attributes];
       attrs.forEach((attr) => {
-        if (
-          attr.name.startsWith('on') ||
-          (attr.name === 'href' && attr.value.toLowerCase().startsWith('javascript:')) ||
-          (attr.name === 'src' && attr.value.toLowerCase().startsWith('javascript:'))
-        ) {
+        const name = attr.name.toLowerCase();
+        // Удаляем все пробельные символы для проверки протокола
+        // Это предотвращает обход вида "j a v a s c r i p t :"
+        const value = attr.value.toLowerCase().replace(/[\s\x00-\x1F]/g, '');
+
+        if (name.startsWith('on')) {
           el.removeAttribute(attr.name);
+          return;
+        }
+
+        if (
+          name === 'href' ||
+          name === 'src' ||
+          name === 'action' ||
+          name === 'formaction' ||
+          name === 'data'
+        ) {
+          if (
+            value.startsWith('javascript:') ||
+            value.startsWith('vbscript:') ||
+            (value.startsWith('data:') && !value.startsWith('data:image/'))
+          ) {
+            el.removeAttribute(attr.name);
+          }
         }
       });
     });

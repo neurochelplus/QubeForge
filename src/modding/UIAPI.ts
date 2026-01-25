@@ -94,7 +94,7 @@ export class UIAPI implements UIAPIInterface {
     div.innerHTML = html;
 
     // Удалить опасные теги
-    const dangerous = div.querySelectorAll('script, style, iframe, object, embed, link, meta');
+    const dangerous = div.querySelectorAll('script, style, iframe, object, embed, link, meta, base');
     dangerous.forEach((el) => el.remove());
 
     // Удалить on* атрибуты и javascript: ссылки
@@ -102,10 +102,25 @@ export class UIAPI implements UIAPIInterface {
     allElements.forEach((el) => {
       const attrs = [...el.attributes];
       attrs.forEach((attr) => {
+        const name = attr.name.toLowerCase();
+        // Remove control characters (including null) to prevent bypasses
+        const value = attr.value.toLowerCase().replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim();
+
+        if (name.startsWith('on')) {
+          el.removeAttribute(attr.name);
+          return;
+        }
+
+        const isDangerousProtocol =
+          value.startsWith('javascript:') || value.startsWith('vbscript:');
+
         if (
-          attr.name.startsWith('on') ||
-          (attr.name === 'href' && attr.value.toLowerCase().startsWith('javascript:')) ||
-          (attr.name === 'src' && attr.value.toLowerCase().startsWith('javascript:'))
+          isDangerousProtocol &&
+          (name === 'href' ||
+            name === 'src' ||
+            name === 'action' ||
+            name === 'formaction' ||
+            name === 'data')
         ) {
           el.removeAttribute(attr.name);
         }

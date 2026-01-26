@@ -93,21 +93,55 @@ export class UIAPI implements UIAPIInterface {
     const div = document.createElement('div');
     div.innerHTML = html;
 
-    // Удалить опасные теги
-    const dangerous = div.querySelectorAll('script, style, iframe, object, embed, link, meta');
-    dangerous.forEach((el) => el.remove());
+    // 1. Удалить опасные теги
+    const dangerousTags = [
+      'script',
+      'style',
+      'iframe',
+      'object',
+      'embed',
+      'link',
+      'meta',
+      'base',
+      'form',
+      'input',
+      'button',
+      'svg',
+      'math',
+      'applet',
+    ];
+    dangerousTags.forEach((tag) => {
+      div.querySelectorAll(tag).forEach((el) => el.remove());
+    });
 
-    // Удалить on* атрибуты и javascript: ссылки
+    // 2. Удалить опасные атрибуты и проверить URL
     const allElements = div.querySelectorAll('*');
     allElements.forEach((el) => {
       const attrs = [...el.attributes];
       attrs.forEach((attr) => {
-        if (
-          attr.name.startsWith('on') ||
-          (attr.name === 'href' && attr.value.toLowerCase().startsWith('javascript:')) ||
-          (attr.name === 'src' && attr.value.toLowerCase().startsWith('javascript:'))
-        ) {
+        const name = attr.name.toLowerCase();
+        const value = attr.value;
+
+        // Удалить обработчики событий (on*)
+        if (name.startsWith('on')) {
           el.removeAttribute(attr.name);
+          return;
+        }
+
+        // Проверка URL атрибутов
+        if (['href', 'src', 'action', 'formaction', 'data', 'cite', 'poster', 'background'].includes(name)) {
+          // Нормализация URL: удаление управляющих символов (whitespace, null, etc) для проверки
+          const normalizedUrl = value.replace(/[\x00-\x20\xA0]/g, '').toLowerCase();
+
+          // Запрещенные протоколы
+          if (
+            normalizedUrl.startsWith('javascript:') ||
+            normalizedUrl.startsWith('vbscript:') ||
+            normalizedUrl.startsWith('data:') ||
+            normalizedUrl.startsWith('file:')
+          ) {
+            el.removeAttribute(attr.name);
+          }
         }
       });
     });

@@ -94,7 +94,9 @@ export class UIAPI implements UIAPIInterface {
     div.innerHTML = html;
 
     // Удалить опасные теги
-    const dangerous = div.querySelectorAll('script, style, iframe, object, embed, link, meta');
+    const dangerous = div.querySelectorAll(
+      'script, style, iframe, object, embed, link, meta, form, base, svg, canvas'
+    );
     dangerous.forEach((el) => el.remove());
 
     // Удалить on* атрибуты и javascript: ссылки
@@ -102,12 +104,21 @@ export class UIAPI implements UIAPIInterface {
     allElements.forEach((el) => {
       const attrs = [...el.attributes];
       attrs.forEach((attr) => {
-        if (
-          attr.name.startsWith('on') ||
-          (attr.name === 'href' && attr.value.toLowerCase().startsWith('javascript:')) ||
-          (attr.name === 'src' && attr.value.toLowerCase().startsWith('javascript:'))
-        ) {
+        if (attr.name.startsWith('on')) {
           el.removeAttribute(attr.name);
+          return;
+        }
+
+        if (attr.name === 'href' || attr.name === 'src') {
+          // Remove control characters and whitespace to prevent bypasses
+          const value = attr.value.replace(/[\s\u0000-\u001F]/g, '').toLowerCase();
+          if (
+            value.startsWith('javascript:') ||
+            value.startsWith('vbscript:') ||
+            value.startsWith('data:text/html')
+          ) {
+            el.removeAttribute(attr.name);
+          }
         }
       });
     });

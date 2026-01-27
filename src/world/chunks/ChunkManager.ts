@@ -103,35 +103,26 @@ export class ChunkManager {
       this.updateCounter = 0;
       this.lastPlayerChunkX = cx;
       this.lastPlayerChunkZ = cz;
-    }
 
-    const radius = this.chunkRadius;
+      const radius = this.chunkRadius;
+      const activeChunks = new Set<string>();
 
-    const activeChunks = new Set<string>();
+      // Загрузить чанки в радиусе (с приоритетом по расстоянию)
+      profiler?.startMeasure('chunk-queue');
+      for (let x = cx - radius; x <= cx + radius; x++) {
+        for (let z = cz - radius; z <= cz + radius; z++) {
+          const key = `${x},${z}`;
+          activeChunks.add(key);
 
-    // Загрузить чанки в радиусе (с приоритетом по расстоянию)
-    profiler?.startMeasure('chunk-queue');
-    for (let x = cx - radius; x <= cx + radius; x++) {
-      for (let z = cz - radius; z <= cz + radius; z++) {
-        const key = `${x},${z}`;
-        activeChunks.add(key);
-
-        if (!this.loader.getChunks().has(key)) {
-          // Приоритет = расстояние от игрока (ближние первыми)
-          const priority = Math.abs(x - cx) + Math.abs(z - cz);
-          this.loader.ensureChunk(x, z, priority);
+          if (!this.loader.getChunks().has(key)) {
+            // Приоритет = расстояние от игрока (ближние первыми)
+            const priority = Math.abs(x - cx) + Math.abs(z - cz);
+            this.loader.ensureChunk(x, z, priority);
+          }
         }
       }
-    }
-    profiler?.endMeasure('chunk-queue');
+      profiler?.endMeasure('chunk-queue');
 
-    // Обработать очередь генерации (1 чанк за кадр)
-    profiler?.startMeasure('chunk-generation');
-    this.loader.processGenerationQueue();
-    profiler?.endMeasure('chunk-generation');
-
-    // Выгрузка и сортировка только при полном обновлении
-    if (shouldFullUpdate) {
       // Выгрузить дальние чанки
       profiler?.startMeasure('chunk-unload');
       for (const [key] of this.loader.getChunks()) {
@@ -147,6 +138,11 @@ export class ChunkManager {
       this.loader.updateChunkSorting(playerPos);
       profiler?.endMeasure('chunk-sorting');
     }
+
+    // Обработать очередь генерации (1 чанк за кадр)
+    profiler?.startMeasure('chunk-generation');
+    this.loader.processGenerationQueue();
+    profiler?.endMeasure('chunk-generation');
 
     // Memory cleanup (реже)
     if (Math.random() < this.memoryCleanupChance) {

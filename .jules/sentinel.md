@@ -1,0 +1,4 @@
+## 2026-01-28 - Manual HTML Sanitization Vulnerabilities
+**Vulnerability:** The `UIAPI` class used a manual blacklist approach to sanitize HTML for mod UIs, which failed to block `form`, `svg`, `base` tags and dangerous attributes like `formaction` or `data:` URIs.
+**Learning:** Manual HTML sanitization is extremely error-prone. Blacklists almost always miss edge cases (e.g., obscure tags or attributes that can execute code).
+**Prevention:** Use established sanitization libraries like DOMPurify whenever possible. If external dependencies are restricted, implement an allow-list (whitelist) approach for tags and attributes instead of a block-list, or maintain a comprehensive block-list that includes all known dangerous vectors (including `form`, `svg`, `math`, `base`, `applet`, and all URL-accepting attributes).

@@ -94,20 +94,41 @@ export class UIAPI implements UIAPIInterface {
     div.innerHTML = html;
 
     // Удалить опасные теги
-    const dangerous = div.querySelectorAll('script, style, iframe, object, embed, link, meta');
+    const dangerous = div.querySelectorAll(
+      'script, style, iframe, object, embed, link, meta, form, svg, base, applet'
+    );
     dangerous.forEach((el) => el.remove());
 
-    // Удалить on* атрибуты и javascript: ссылки
+    // Удалить опасные атрибуты
     const allElements = div.querySelectorAll('*');
     allElements.forEach((el) => {
       const attrs = [...el.attributes];
       attrs.forEach((attr) => {
-        if (
-          attr.name.startsWith('on') ||
-          (attr.name === 'href' && attr.value.toLowerCase().startsWith('javascript:')) ||
-          (attr.name === 'src' && attr.value.toLowerCase().startsWith('javascript:'))
-        ) {
+        const name = attr.name.toLowerCase();
+        const value = attr.value.toLowerCase();
+
+        // 1. Блокировать обработчики событий
+        if (name.startsWith('on')) {
           el.removeAttribute(attr.name);
+          return;
+        }
+
+        // 2. Блокировать перехват форм
+        if (name === 'form' || name === 'formaction') {
+          el.removeAttribute(attr.name);
+          return;
+        }
+
+        // 3. Блокировать выполнение кода в URL
+        if (name === 'href' || name === 'src' || name === 'xlink:href' || name === 'action') {
+          const trimmed = value.trim();
+          if (
+            trimmed.startsWith('javascript:') ||
+            trimmed.startsWith('vbscript:') ||
+            trimmed.startsWith('data:')
+          ) {
+            el.removeAttribute(attr.name);
+          }
         }
       });
     });
